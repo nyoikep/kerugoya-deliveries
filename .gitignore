@@ -1,0 +1,38 @@
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+.env
+.env.local
+
+# Next.js
+.next/
+out/
+build/
+
+# Mobile
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+**/*.jks
+**/*.keystore
+**/*.apk
+**/*.aab
+
+# OS
+.DS_Store
+Thumbs.db
+*.Zone.Identifier
+
+# Large Files
+*.deb
+*.mp4
+*.zip
+*.log
+dev.db
+*.png
+*.jpg

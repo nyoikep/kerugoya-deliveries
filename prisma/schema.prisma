@@ -1,0 +1,121 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id                 String            @id @default(cuid())
+  email              String            @unique
+  phone              String?           @unique
+  idNumber           String?           @unique
+  numberPlate        String?           @unique
+  motorcyclePlateNumber String?           @unique
+  password           String
+  name               String?
+  role               String            @default("CLIENT")
+  loyaltyPoints      Int               @default(0)
+  fcmToken           String?
+  resetToken         String?
+  resetTokenExpiry   DateTime?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  deliveriesAsClient DeliveryRequest[] @relation("ClientDeliveries")
+  deliveriesAsRider  DeliveryRequest[] @relation("RiderDeliveries")
+  ownedBusinesses    Business[] // Relation to Business
+  ratingsAsRider     Rating[]          @relation("RiderRatings")
+  ratingsAsClient    Rating[]          @relation("ClientRatings")
+  mpesaTransactions  MpesaTransaction[] // Relation to MpesaTransaction
+}
+
+model DeliveryRequest {
+  id              String          @id @default(cuid())
+  cartItems       CartItem[]
+  description     String?
+  clientLocation  String
+  destination     String
+  status          String          @default("PENDING")
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  clientId        String
+  client          User            @relation("ClientDeliveries", fields: [clientId], references: [id])
+  riderId         String?
+  rider           User?           @relation("RiderDeliveries", fields: [riderId], references: [id])
+  mpesaTransaction MpesaTransaction? // One-to-one relation with MpesaTransaction
+
+  @@index([status])
+  @@index([clientId])
+  @@index([riderId])
+}
+
+model Product {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?
+  price       Float
+  businessId  String
+  business    Business  @relation(fields: [businessId], references: [id])
+  cartItems   CartItem[] // Relation to CartItem
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([businessId])
+}
+
+model CartItem {
+  id                String          @id @default(cuid())
+  productId         String
+  product           Product         @relation(fields: [productId], references: [id])
+  quantity          Int
+  deliveryRequestId String?
+  deliveryRequest   DeliveryRequest? @relation(fields: [deliveryRequestId], references: [id])
+}
+
+model Business {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?
+  category    String    @default("SHOP")
+  ownerId     String
+  owner       User      @relation(fields: [ownerId], references: [id])
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Rating {
+  id        String   @id @default(cuid())
+  rating    Int
+  comment   String?
+  riderId   String
+  rider     User     @relation("RiderRatings", fields: [riderId], references: [id])
+  clientId  String
+  client    User     @relation("ClientRatings", fields: [clientId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model MpesaTransaction {
+  id                String            @id @default(cuid())
+  merchantRequestID String
+  checkoutRequestID String            @unique
+  resultCode        String
+  resultDesc        String?
+  mpesaReceiptNumber String?           @unique
+  amount            Float
+  transactionDate   String // Store as string as M-Pesa provides it. Can be parsed later.
+  phoneNumber       String
+  status            String            @default("PENDING") // PENDING, COMPLETED, FAILED
+  userId            String // Link to the user who initiated the transaction
+  user              User              @relation(fields: [userId], references: [id])
+  deliveryRequestId String?           @unique // Optional: Link to a specific delivery request
+  deliveryRequest   DeliveryRequest?  @relation(fields: [deliveryRequestId], references: [id])
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@index([userId])
+}
