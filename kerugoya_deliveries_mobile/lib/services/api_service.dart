@@ -36,13 +36,26 @@ class ApiService {
     return _handleResponse(response);
   }
 
-  static dynamic _handleResponse(http.Response response) { // Changed return type to dynamic
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      return json.decode(response.body);
-    } else {
-      final errorData = json.decode(response.body);
+  static dynamic _handleResponse(http.Response response) {
+    try {
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return json.decode(response.body);
+      } else {
+        dynamic errorData;
+        try {
+          errorData = json.decode(response.body);
+        } catch (e) {
+          errorData = {'message': 'Server returned status code ${response.statusCode}'};
+        }
+        throw HttpException(
+          message: errorData['message'] ?? 'Something went wrong',
+          statusCode: response.statusCode,
+        );
+      }
+    } catch (e) {
+      if (e is HttpException) rethrow;
       throw HttpException(
-        message: errorData['message'] ?? 'Something went wrong',
+        message: 'Failed to process response: ${e.toString()}',
         statusCode: response.statusCode,
       );
     }

@@ -10,6 +10,7 @@ import 'package:kerugoya_deliveries_mobile/services/product_service.dart';
 import 'package:kerugoya_deliveries_mobile/services/delivery_service.dart';
 import 'package:kerugoya_deliveries_mobile/services/mpesa_service.dart';
 import 'package:kerugoya_deliveries_mobile/services/rider_service.dart';
+import 'package:kerugoya_deliveries_mobile/services/business_service.dart';
 
 void main() {
   runApp(
@@ -29,6 +30,9 @@ void main() {
         ),
         ProxyProvider<AuthProvider, RiderService>(
           update: (_, auth, __) => RiderService(auth),
+        ),
+        ProxyProvider<AuthProvider, BusinessService>(
+          update: (_, auth, __) => BusinessService(auth),
         ),
       ],
       child: const MyApp(),
