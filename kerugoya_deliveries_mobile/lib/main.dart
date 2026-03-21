@@ -6,6 +6,10 @@ import 'package:kerugoya_deliveries_mobile/screens/rider_main_screen.dart';
 import 'package:kerugoya_deliveries_mobile/services/auth_provider.dart';
 import 'package:kerugoya_deliveries_mobile/services/cart_provider.dart';
 import 'package:kerugoya_deliveries_mobile/services/socket_service.dart';
+import 'package:kerugoya_deliveries_mobile/services/product_service.dart';
+import 'package:kerugoya_deliveries_mobile/services/delivery_service.dart';
+import 'package:kerugoya_deliveries_mobile/services/mpesa_service.dart';
+import 'package:kerugoya_deliveries_mobile/services/rider_service.dart';
 
 void main() {
   runApp(
@@ -14,6 +18,18 @@ void main() {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
         Provider(create: (_) => SocketService()),
+        ProxyProvider<AuthProvider, ProductService>(
+          update: (_, auth, __) => ProductService(auth),
+        ),
+        ProxyProvider<AuthProvider, DeliveryService>(
+          update: (_, auth, __) => DeliveryService(auth),
+        ),
+        ProxyProvider<AuthProvider, MpesaService>(
+          update: (_, auth, __) => MpesaService(auth),
+        ),
+        ProxyProvider<AuthProvider, RiderService>(
+          update: (_, auth, __) => RiderService(auth),
+        ),
       ],
       child: const MyApp(),
     ),
@@ -36,7 +52,7 @@ class MyApp extends StatelessWidget {
       home: Consumer<AuthProvider>(
         builder: (context, auth, _) {
           if (!auth.isAuthenticated) {
-            return const LoginScreen();
+            return const MainScreen(userRole: 'GUEST');
           }
 
           // Navigate based on role

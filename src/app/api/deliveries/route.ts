@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
     const deliveryRequests = await prisma.deliveryRequest.findMany({
       where: { clientId: decoded.userId }, // Fetch only requests for the logged-in user
       include: {
-        client: { select: { name: true, email: true } },
+        client: { select: { name: true, phone: true, email: true } },
         cartItems: {
           include: {
             product: true,

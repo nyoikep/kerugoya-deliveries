@@ -1,6 +1,7 @@
 import 'package:kerugoya_deliveries_mobile/services/api_service.dart';
 import 'package:kerugoya_deliveries_mobile/services/auth_provider.dart';
 import 'package:kerugoya_deliveries_mobile/models/delivery_request.dart';
+import 'package:kerugoya_deliveries_mobile/models/cart_item.dart';
 
 class DeliveryService {
   final AuthProvider _authProvider;
@@ -18,8 +19,8 @@ class DeliveryService {
         token: _authProvider.token,
       );
 
-      if (response['deliveries'] is List) {
-        return (response['deliveries'] as List)
+      if (response is List) {
+        return (response as List)
             .map((item) => DeliveryRequest.fromJson(item))
             .toList();
       } else {
@@ -47,8 +48,8 @@ class DeliveryService {
         token: _authProvider.token,
       );
 
-      if (response['deliveries'] is List) {
-        return (response['deliveries'] as List)
+      if (response is List) {
+        return (response as List)
             .map((item) => DeliveryRequest.fromJson(item))
             .toList();
       } else {
@@ -58,6 +59,40 @@ class DeliveryService {
       rethrow;
     } catch (e) {
       throw HttpException(message: 'Failed to fetch available delivery requests: ${e.toString()}', statusCode: 500);
+    }
+  }
+
+  Future<DeliveryRequest> createDeliveryRequest({
+    required List<CartItem> cartItems,
+    required String clientLocation,
+    required String destination,
+    String? riderId,
+  }) async {
+    if (!_authProvider.isAuthenticated) {
+      throw HttpException(message: 'User not authenticated', statusCode: 401);
+    }
+
+    try {
+      final response = await ApiService.post(
+        'deliveries',
+        {
+          'cartItems': cartItems.map((item) => {
+            'id': item.productId,
+            'name': item.product.name,
+            'price': item.product.price,
+            'quantity': item.quantity,
+          }).toList(),
+          'clientLocation': clientLocation,
+          'destination': destination,
+          'riderId': riderId,
+        },
+        token: _authProvider.token,
+      );
+      return DeliveryRequest.fromJson(response);
+    } on HttpException {
+      rethrow;
+    } catch (e) {
+      throw HttpException(message: 'Failed to create delivery request: ${e.toString()}', statusCode: 500);
     }
   }
 

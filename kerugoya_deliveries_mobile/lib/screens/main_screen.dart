@@ -4,6 +4,7 @@ import 'package:kerugoya_deliveries_mobile/screens/cart_screen.dart';
 import 'package:kerugoya_deliveries_mobile/screens/profile_screen.dart';
 import 'package:kerugoya_deliveries_mobile/screens/delivery_tracking_screen.dart';
 import 'package:kerugoya_deliveries_mobile/screens/delivery_history_screen.dart';
+import 'package:kerugoya_deliveries_mobile/screens/login_screen.dart';
 
 class MainScreen extends StatefulWidget {
   final String userRole; // Add userRole parameter
@@ -26,10 +27,35 @@ class _MainScreenState extends State<MainScreen> {
     _widgetOptions = <Widget>[
       HomeScreen(userRole: widget.userRole),
       const CartScreen(),
-      const DeliveryTrackingScreen(),
-      const DeliveryHistoryScreen(),
-      const ProfileScreen(),
+      widget.userRole == 'GUEST' ? _buildGuestAccessPrompt('Tracking') : const DeliveryTrackingScreen(),
+      widget.userRole == 'GUEST' ? _buildGuestAccessPrompt('History') : const DeliveryHistoryScreen(),
+      widget.userRole == 'GUEST' ? _buildGuestAccessPrompt('Profile') : const ProfileScreen(),
     ];
+  }
+
+  Widget _buildGuestAccessPrompt(String featureName) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.lock_outline, size: 64, color: Colors.grey[400]),
+          const SizedBox(height: 16),
+          Text(
+            'Please log in to view $featureName',
+            style: const TextStyle(fontSize: 18, color: Colors.grey),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+              );
+            },
+            child: const Text('Go to Login'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _onItemTapped(int index) {

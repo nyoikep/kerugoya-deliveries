@@ -10,9 +10,9 @@ class DeliveryRequest {
   final DateTime createdAt;
   final DateTime updatedAt;
   final String clientId;
+  final String? clientName;
+  final String? clientPhone;
   final String? riderId;
-  // User objects for client and rider could be nested if the API provides them,
-  // but for simplicity, we'll assume only IDs are provided initially unless needed.
 
   DeliveryRequest({
     required this.id,
@@ -24,6 +24,8 @@ class DeliveryRequest {
     required this.createdAt,
     required this.updatedAt,
     required this.clientId,
+    this.clientName,
+    this.clientPhone,
     this.riderId,
   });
 
@@ -40,6 +42,8 @@ class DeliveryRequest {
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
       clientId: json['clientId'],
+      clientName: json['client']?['name'],
+      clientPhone: json['client']?['phone'],
       riderId: json['riderId'],
     );
   }
@@ -55,6 +59,10 @@ class DeliveryRequest {
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
       'clientId': clientId,
+      'client': {
+        'name': clientName,
+        'phone': clientPhone,
+      },
       'riderId': riderId,
     };
   }

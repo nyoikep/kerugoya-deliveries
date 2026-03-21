@@ -284,10 +284,27 @@ class _RiderDeliveriesScreenState extends State<RiderDeliveriesScreen> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text('Delivery ID: ${delivery.id.substring(0, 8)}...'),
+                                      Text('Delivery ID: ${delivery.id.substring(0, 8)}...', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                      const Divider(),
+                                      Text('Client: ${delivery.clientName ?? 'Unknown'}', style: const TextStyle(fontSize: 16)),
+                                      GestureDetector(
+                                        onTap: () {
+                                          if (delivery.clientPhone != null) {
+                                            // You might need url_launcher for this, but for now just showing it
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(content: Text('Calling ${delivery.clientPhone}...')),
+                                            );
+                                          }
+                                        },
+                                        child: Text(
+                                          'Phone: ${delivery.clientPhone ?? 'N/A'}',
+                                          style: const TextStyle(color: Colors.blue, decoration: TextDecoration.underline),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
                                       Text('Status: ${delivery.status}'),
-                                      Text('Client Location: ${delivery.clientLocation}'),
-                                      Text('Destination: ${delivery.destination}'),
+                                      Text('From: ${delivery.clientLocation}'),
+                                      Text('To: ${delivery.destination}'),
                                       Text('Assigned: ${DateFormat.yMd().add_jm().format(delivery.createdAt)}'),
                                       const SizedBox(height: 10),
                                       if (delivery.status == 'ACCEPTED' || delivery.status == 'IN_PROGRESS')

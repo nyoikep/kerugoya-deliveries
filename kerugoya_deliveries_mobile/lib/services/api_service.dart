@@ -5,7 +5,7 @@ class ApiService {
   // When sharing the APK, replace this with your public Backend URL (e.g. Render or Ngrok)
   static const String _baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://localhost:3000/api', // For local adb reverse
+    defaultValue: 'https://kerugoya-deliveries-production.up.railway.app/api', // Updated for Railway!
   );
 
   static Future<Map<String, dynamic>> post(String endpoint, Map<String, dynamic> data, {String? token}) async {

@@ -4,109 +4,12 @@ import 'package:kerugoya_deliveries_mobile/services/api_service.dart'; // For Ht
 import 'package:kerugoya_deliveries_mobile/services/auth_provider.dart'; // For AuthProvider
 import 'package:kerugoya_deliveries_mobile/services/cart_provider.dart';
 import 'package:kerugoya_deliveries_mobile/services/mpesa_service.dart'; // New Import
+import 'package:kerugoya_deliveries_mobile/screens/login_screen.dart';
+import 'package:kerugoya_deliveries_mobile/screens/checkout_screen.dart';
 import 'package:provider/provider.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
-
-  Future<void> _initiateMpesaPayment(BuildContext context, CartProvider cart) async {
-    final mpesaService = Provider.of<MpesaService>(context, listen: false);
-    final authProvider = Provider.of<AuthProvider>(context, listen: false); // Access AuthProvider
-
-    if (!authProvider.isAuthenticated) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please log in to make a payment.')),
-      );
-      return;
-    }
-
-    if (cart.totalAmount <= 0) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Your cart is empty.')),
-      );
-      return;
-    }
-
-    String? phoneNumber;
-    if (authProvider.userRole == 'CLIENT' && authProvider.token != null && authProvider.token!.isNotEmpty) {
-      try {
-        phoneNumber = JwtDecoder.decode(authProvider.token!)['phone'] as String?;
-      } catch (e) {
-        // Handle potential decoding errors
-        phoneNumber = null;
-      }
-    }
-
-
-    // If phone number is not available from auth, prompt the user
-    if (phoneNumber == null || phoneNumber.isEmpty) {
-      final phoneController = TextEditingController();
-      phoneNumber = await showDialog<String>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Enter M-Pesa Phone Number'),
-          content: TextField(
-            controller: phoneController,
-            keyboardType: TextInputType.phone,
-            decoration: const InputDecoration(hintText: "e.g., 2547XXXXXXXX"),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(ctx).pop(phoneController.text),
-              child: const Text('Proceed'),
-            ),
-          ],
-        ),
-      );
-      if (!context.mounted) return;
-      if (phoneNumber == null || phoneNumber.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Phone number is required for M-Pesa payment.')),
-        );
-        return;
-      }
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Initiating M-Pesa STK Push...')),
-    );
-
-    try {
-      final response = await mpesaService.initiateStkPush(
-        amount: cart.totalAmount, // Use actual cart total
-        phoneNumber: phoneNumber,
-        accountReference: 'Order_${DateTime.now().millisecondsSinceEpoch}', // Unique reference
-        transactionDesc: 'Kerugoya Deliveries Payment',
-      );
-      if (!context.mounted) return;
-      if (response['ResponseCode'] == '0') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('STK Push sent to $phoneNumber. Please enter PIN to complete payment.')),
-        );
-        cart.clearCart(); // Clear cart on successful initiation
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('STK Push initiation failed: ${response['CustomerMessage'] ?? response['ResponseDescription']}')),
-        );
-      }
-    } on HttpException catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Payment error: ${e.message}')),
-      );
-    } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('An unexpected error occurred: ${e.toString()}')),
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -138,7 +41,17 @@ class CartScreen extends StatelessWidget {
                     backgroundColor: Theme.of(context).primaryColor,
                   ),
                   TextButton(
-                    onPressed: () => _initiateMpesaPayment(context, cart), // Call the new payment method
+                    onPressed: () {
+                      if (cart.totalAmount <= 0) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Your cart is empty.')),
+                        );
+                        return;
+                      }
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (context) => const CheckoutScreen()),
+                      );
+                    },
                     child: const Text('ORDER NOW'),
                   ),
                 ],

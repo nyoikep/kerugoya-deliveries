@@ -32,7 +32,7 @@ app.prepare().then(() => {
     socket.on('client_location_update', (data) => {
       const { deliveryId, latitude, longitude } = data;
       if (deliveryId) {
-        socket.to(deliveryId).emit('client_location_broadcast', { latitude, longitude });
+        socket.to(deliveryId).emit('client_location_broadcast', { deliveryId, latitude, longitude });
       }
     });
 

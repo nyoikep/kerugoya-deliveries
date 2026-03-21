@@ -43,7 +43,9 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) {
         Provider.of<AuthProvider>(context, listen: false).saveToken(token);
         // AuthProvider's change notification will trigger MyApp's Consumer
-        // to navigate to the appropriate home screen. No explicit pushReplacement needed here.
+        // to navigate to the appropriate home screen.
+        // Since LoginScreen was pushed, we pop it here.
+        Navigator.of(context).pop();
       }
     } on HttpException catch (e) {
       if (mounted) {

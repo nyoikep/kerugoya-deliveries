@@ -5,6 +5,7 @@ import 'package:kerugoya_deliveries_mobile/services/api_service.dart'; // For Ht
 import 'package:kerugoya_deliveries_mobile/models/product.dart'; // Import Product model
 import 'package:kerugoya_deliveries_mobile/services/product_service.dart'; // Import ProductService
 import 'package:kerugoya_deliveries_mobile/services/cart_provider.dart'; // Import CartProvider
+import 'package:kerugoya_deliveries_mobile/screens/login_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final String userRole;
@@ -55,12 +56,22 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: Text('Welcome ${widget.userRole}'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              Provider.of<AuthProvider>(context, listen: false).logout();
-            },
-          ),
+          if (widget.userRole == 'GUEST')
+            IconButton(
+              icon: const Icon(Icons.login),
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                );
+              },
+            )
+          else
+            IconButton(
+              icon: const Icon(Icons.logout),
+              onPressed: () {
+                Provider.of<AuthProvider>(context, listen: false).logout();
+              },
+            ),
         ],
       ),
       body: _isLoading
@@ -126,5 +137,3 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
-
-

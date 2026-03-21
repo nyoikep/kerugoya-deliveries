@@ -8,10 +8,7 @@ class ProductService {
   ProductService(this._authProvider);
 
   Future<List<Product>> getProducts() async {
-    if (!_authProvider.isAuthenticated) {
-      throw HttpException(message: 'User not authenticated', statusCode: 401);
-    }
-
+    // Guest users are allowed to see products
     try {
       final response = await ApiService.get(
         'products', // Your backend endpoint for products
