@@ -1,10 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:jwt_decoder/jwt_decoder.dart'; // New import
-import 'package:kerugoya_deliveries_mobile/services/api_service.dart'; // For HttpException
-import 'package:kerugoya_deliveries_mobile/services/auth_provider.dart'; // For AuthProvider
 import 'package:kerugoya_deliveries_mobile/services/cart_provider.dart';
-import 'package:kerugoya_deliveries_mobile/services/mpesa_service.dart'; // New Import
-import 'package:kerugoya_deliveries_mobile/screens/login_screen.dart';
 import 'package:kerugoya_deliveries_mobile/screens/checkout_screen.dart';
 import 'package:provider/provider.dart';
 
@@ -16,102 +11,168 @@ class CartScreen extends StatelessWidget {
     final cart = Provider.of<CartProvider>(context);
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Your Cart'),
+        title: const Text('My Cart', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        actions: [
+          if (cart.itemCount > 0)
+            IconButton(
+              icon: const Icon(Icons.delete_outline, color: Colors.red),
+              onPressed: () => _showClearCartDialog(context, cart),
+            ),
+        ],
       ),
-      body: Column(
-        children: <Widget>[
-          Card(
-            margin: const EdgeInsets.all(15),
-            child: Padding(
-              padding: const EdgeInsets.all(8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: <Widget>[
-                  const Text(
-                    'Total',
-                    style: TextStyle(fontSize: 20),
-                  ),
-                  const Spacer(),
-                  Chip(
-                    label: Text(
-                      'Ksh ${cart.totalAmount.toStringAsFixed(2)}', // Changed currency
-                      style: Theme.of(context).primaryTextTheme.titleLarge?.copyWith(color: Colors.white), // Ensure text color is visible
-                    ),
-                    backgroundColor: Theme.of(context).primaryColor,
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      if (cart.totalAmount <= 0) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Your cart is empty.')),
-                        );
-                        return;
-                      }
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (context) => const CheckoutScreen()),
-                      );
-                    },
-                    child: const Text('ORDER NOW'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Expanded(
-            child: ListView.builder(
-              itemCount: cart.itemCount,
-              itemBuilder: (ctx, i) => CartItemWidget(
-                cart.items.values.toList()[i].id,
-                cart.items.keys.toList()[i],
-                cart.items.values.toList()[i].product.price, // Access price from product
-                cart.items.values.toList()[i].quantity,
-                cart.items.values.toList()[i].product.name, // Access name from product
-              ),
-            ),
-          ),
+      body: cart.itemCount == 0 ? _buildEmptyState() : _buildCartList(context, cart),
+      bottomNavigationBar: cart.itemCount == 0 ? null : _buildBottomBar(context, cart),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.shopping_cart_outlined, size: 100, color: Colors.grey[200]),
+          const SizedBox(height: 24),
+          const Text('Your cart is empty', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.grey)),
+          const SizedBox(height: 8),
+          const Text('Add some items to start a delivery!', style: TextStyle(color: Colors.grey)),
         ],
       ),
     );
   }
-}
 
-class CartItemWidget extends StatelessWidget {
-  final String id;
-  final String productId;
-  final double price;
-  final int quantity;
-  final String name;
+  Widget _buildCartList(BuildContext context, CartProvider cart) {
+    final items = cart.items.values.toList();
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: items.length,
+      itemBuilder: (ctx, i) {
+        final item = items[i];
+        return Dismissible(
+          key: ValueKey(item.id),
+          direction: DismissDirection.endToStart,
+          background: Container(
+            color: Colors.red,
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.only(right: 20),
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            child: const Icon(Icons.delete, color: Colors.white),
+          ),
+          onDismissed: (direction) {
+            cart.removeItem(item.productId);
+          },
+          child: _buildCartItem(context, item, cart),
+        );
+      },
+    );
+  }
 
-  const CartItemWidget(
-    this.id,
-    this.productId,
-    this.price,
-    this.quantity,
-    this.name, {
-    super.key,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildCartItem(BuildContext context, dynamic item, CartProvider cart) {
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 4),
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      elevation: 2,
       child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: ListTile(
-          leading: CircleAvatar(
-            child: Padding(
-              padding: const EdgeInsets.all(5),
-              child: FittedBox(
-                child: Text('Ksh $price'), // Changed currency
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: Colors.orange[50],
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.inventory_2, color: Colors.orange),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(item.product.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  Text('Ksh ${item.product.price.toInt()}', style: TextStyle(color: Colors.grey[600])),
+                ],
               ),
             ),
-          ),
-          title: Text(name),
-          subtitle: Text('Total: Ksh ${(price * quantity)}'), // Changed currency
-          trailing: Text('$quantity x'),
+            Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.remove_circle_outline),
+                  onPressed: () => cart.removeSingleItem(item.productId),
+                ),
+                Text('${item.quantity}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                IconButton(
+                  icon: const Icon(Icons.add_circle_outline),
+                  onPressed: () => cart.addItem(item.product),
+                ),
+              ],
+            ),
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildBottomBar(BuildContext context, CartProvider cart) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
+      ),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Total Amount', style: TextStyle(fontSize: 16, color: Colors.grey)),
+                Text('Ksh ${cart.totalAmount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.orange)),
+              ],
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                ),
+                onPressed: () {
+                  Navigator.of(context).push(MaterialPageRoute(builder: (context) => const CheckoutScreen()));
+                },
+                child: const Text('Checkout Now', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showClearCartDialog(BuildContext context, CartProvider cart) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Clear Cart'),
+        content: const Text('Are you sure you want to remove all items?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () {
+              cart.clearCart();
+              Navigator.pop(ctx);
+            },
+            child: const Text('Clear', style: TextStyle(color: Colors.red)),
+          ),
+        ],
       ),
     );
   }

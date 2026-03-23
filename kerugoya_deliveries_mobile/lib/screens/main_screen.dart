@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:kerugoya_deliveries_mobile/screens/home_screen.dart';
 import 'package:kerugoya_deliveries_mobile/screens/shop_screen.dart';
 import 'package:kerugoya_deliveries_mobile/screens/cart_screen.dart';
@@ -6,6 +7,7 @@ import 'package:kerugoya_deliveries_mobile/screens/profile_screen.dart';
 import 'package:kerugoya_deliveries_mobile/screens/delivery_tracking_screen.dart';
 import 'package:kerugoya_deliveries_mobile/screens/delivery_history_screen.dart';
 import 'package:kerugoya_deliveries_mobile/screens/login_screen.dart';
+import 'package:kerugoya_deliveries_mobile/services/cart_provider.dart';
 
 class MainScreen extends StatefulWidget {
   final String userRole;
@@ -78,37 +80,52 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    _updateWidgetOptions(); // Rebuild options if role changes or callback needed
+    _updateWidgetOptions(); 
+    final cart = Provider.of<CartProvider>(context);
+
     return Scaffold(
-      body: _widgetOptions.elementAt(_selectedIndex),
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _widgetOptions,
+      ),
       bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
+        items: [
+          const BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
             activeIcon: Icon(Icons.home),
             label: 'Home',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.storefront_outlined),
             activeIcon: Icon(Icons.storefront),
             label: 'Shop',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_cart_outlined),
-            activeIcon: Icon(Icons.shopping_cart),
+            icon: cart.itemCount > 0 
+              ? Badge(
+                  label: Text(cart.itemCount.toString()),
+                  child: const Icon(Icons.shopping_cart_outlined),
+                )
+              : const Icon(Icons.shopping_cart_outlined),
+            activeIcon: cart.itemCount > 0 
+              ? Badge(
+                  label: Text(cart.itemCount.toString()),
+                  child: const Icon(Icons.shopping_cart),
+                )
+              : const Icon(Icons.shopping_cart),
             label: 'Cart',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.delivery_dining_outlined),
             activeIcon: Icon(Icons.delivery_dining),
             label: 'Tracking',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.history_outlined),
             activeIcon: Icon(Icons.history),
             label: 'History',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
             activeIcon: Icon(Icons.person),
             label: 'Profile',
