@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kerugoya_deliveries_mobile/screens/home_screen.dart';
+import 'package:kerugoya_deliveries_mobile/screens/shop_screen.dart';
 import 'package:kerugoya_deliveries_mobile/screens/cart_screen.dart';
 import 'package:kerugoya_deliveries_mobile/screens/profile_screen.dart';
 import 'package:kerugoya_deliveries_mobile/screens/delivery_tracking_screen.dart';
@@ -7,7 +8,7 @@ import 'package:kerugoya_deliveries_mobile/screens/delivery_history_screen.dart'
 import 'package:kerugoya_deliveries_mobile/screens/login_screen.dart';
 
 class MainScreen extends StatefulWidget {
-  final String userRole; // Add userRole parameter
+  final String userRole;
 
   const MainScreen({super.key, required this.userRole});
 
@@ -18,14 +19,25 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
-  // _widgetOptions will now use widget.userRole
-  late final List<Widget> _widgetOptions;
+  late List<Widget> _widgetOptions;
 
   @override
   void initState() {
     super.initState();
+    _updateWidgetOptions();
+  }
+
+  void _updateWidgetOptions() {
     _widgetOptions = <Widget>[
-      HomeScreen(userRole: widget.userRole),
+      HomeScreen(
+        userRole: widget.userRole,
+        onNavigate: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
+      ),
+      const ShopScreen(),
       const CartScreen(),
       widget.userRole == 'GUEST' ? _buildGuestAccessPrompt('Tracking') : const DeliveryTrackingScreen(),
       widget.userRole == 'GUEST' ? _buildGuestAccessPrompt('History') : const DeliveryHistoryScreen(),
@@ -66,37 +78,48 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    _updateWidgetOptions(); // Rebuild options if role changes or callback needed
     return Scaffold(
-      body: Center(
-        child: _widgetOptions.elementAt(_selectedIndex),
-      ),
+      body: _widgetOptions.elementAt(_selectedIndex),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
-            icon: Icon(Icons.home),
+            icon: Icon(Icons.home_outlined),
+            activeIcon: Icon(Icons.home),
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_cart),
+            icon: Icon(Icons.storefront_outlined),
+            activeIcon: Icon(Icons.storefront),
+            label: 'Shop',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.shopping_cart_outlined),
+            activeIcon: Icon(Icons.shopping_cart),
             label: 'Cart',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.delivery_dining),
+            icon: Icon(Icons.delivery_dining_outlined),
+            activeIcon: Icon(Icons.delivery_dining),
             label: 'Tracking',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.history),
+            icon: Icon(Icons.history_outlined),
+            activeIcon: Icon(Icons.history),
             label: 'History',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person),
+            icon: Icon(Icons.person_outline),
+            activeIcon: Icon(Icons.person),
             label: 'Profile',
           ),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.amber[800],
+        selectedItemColor: Colors.black,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
+        selectedFontSize: 12,
+        unselectedFontSize: 12,
         onTap: _onItemTapped,
       ),
     );

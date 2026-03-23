@@ -1,49 +1,56 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:kerugoya_deliveries_mobile/services/auth_provider.dart';
-import 'package:kerugoya_deliveries_mobile/services/api_service.dart';
-import 'package:kerugoya_deliveries_mobile/models/product.dart';
 import 'package:kerugoya_deliveries_mobile/models/business.dart';
 import 'package:kerugoya_deliveries_mobile/services/business_service.dart';
-import 'package:kerugoya_deliveries_mobile/services/cart_provider.dart';
 import 'package:kerugoya_deliveries_mobile/screens/login_screen.dart';
 import 'package:kerugoya_deliveries_mobile/screens/checkout_screen.dart';
 import 'package:video_player/video_player.dart';
 
 class HomeScreen extends StatefulWidget {
   final String userRole;
+  final Function(int)? onNavigate;
 
-  const HomeScreen({super.key, required this.userRole});
+  const HomeScreen({super.key, required this.userRole, this.onNavigate});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  List<Business> _businesses = [];
-  bool _isLoading = true;
-  String? _error;
-  String _selectedCategory = 'All';
   late VideoPlayerController _videoController;
   bool _isVideoInitialized = false;
+  List<Business> _featuredBusinesses = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _fetchData();
     _initVideo();
+    _fetchFeatured();
   }
 
   void _initVideo() {
     _videoController = VideoPlayerController.asset('assets/5614377-hd_1920_1080_25fps.mp4')
       ..initialize().then((_) {
-        setState(() {
-          _isVideoInitialized = true;
-        });
+        setState(() { _isVideoInitialized = true; });
         _videoController.setLooping(true);
         _videoController.setVolume(0);
         _videoController.play();
       });
+  }
+
+  Future<void> _fetchFeatured() async {
+    try {
+      final businessService = Provider.of<BusinessService>(context, listen: false);
+      final fetched = await businessService.getBusinesses();
+      setState(() {
+        _featuredBusinesses = fetched.take(5).toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() { _isLoading = false; });
+    }
   }
 
   @override
@@ -52,96 +59,20 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  Future<void> _fetchData() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-    try {
-      final businessService = Provider.of<BusinessService>(context, listen: false);
-      final fetchedBusinesses = await businessService.getBusinesses();
-      setState(() {
-        _businesses = fetchedBusinesses;
-        _isLoading = false;
-      });
-    } on HttpException catch (e) {
-      setState(() {
-        _error = e.message;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _error = 'Failed to load data: ${e.toString()}';
-        _isLoading = false;
-      });
-    }
-  }
-
-  List<String> get _categories {
-    final cats = _businesses.map((b) => b.category).toSet().toList();
-    cats.sort();
-    return ['All', ...cats];
-  }
-
-  List<Business> get _filteredBusinesses {
-    if (_selectedCategory == 'All') return _businesses;
-    return _businesses.where((b) => b.category == _selectedCategory).toList();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _fetchData,
-              child: CustomScrollView(
-                slivers: [
-                  _buildAppBar(),
-                  SliverToBoxAdapter(child: _buildHeroSection()),
-                  SliverToBoxAdapter(child: _buildCategorySelector()),
-                  if (_error != null)
-                    SliverFillRemaining(child: Center(child: Text('Error: $_error')))
-                  else if (_businesses.isEmpty)
-                    const SliverFillRemaining(child: Center(child: Text('No businesses available.')))
-                  else
-                    SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          final business = _filteredBusinesses[index];
-                          return _buildBusinessSection(business);
-                        },
-                        childCount: _filteredBusinesses.length,
-                      ),
-                    ),
-                  const SliverToBoxAdapter(child: SizedBox(height: 100)),
-                ],
-              ),
-            ),
-    );
-  }
-
-  Widget _buildAppBar() {
-    return SliverAppBar(
-      floating: true,
-      pinned: true,
-      expandedHeight: 0,
-      backgroundColor: Colors.white,
-      elevation: 0,
-      title: Image.asset('assets/logo.jpg', height: 40),
-      centerTitle: true,
-      actions: [
-        if (widget.userRole == 'GUEST')
-          IconButton(
-            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const LoginScreen())),
-            icon: const Icon(Icons.person_outline, color: Colors.black),
-          )
-        else
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.black),
-            onPressed: () => Provider.of<AuthProvider>(context, listen: false).logout(),
-          ),
-      ],
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHeroSection(),
+            _buildQuickActions(),
+            _buildFeaturedSection(),
+            _buildPromotions(),
+          ],
+        ),
+      ),
     );
   }
 
@@ -149,155 +80,193 @@ class _HomeScreenState extends State<HomeScreen> {
     return Stack(
       children: [
         Container(
-          height: 300,
+          height: 450,
           width: double.infinity,
-          decoration: const BoxDecoration(
-            color: Colors.black,
+          foregroundDecoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.black.withOpacity(0.1),
+                Colors.black.withOpacity(0.8),
+              ],
+            ),
           ),
           child: _isVideoInitialized
               ? AspectRatio(
                   aspectRatio: _videoController.value.aspectRatio,
                   child: VideoPlayer(_videoController),
                 )
-              : Image.asset(
-                  'assets/pexels-bruce-byereta-422939715-31961615.jpg',
-                  fit: BoxFit.cover,
-                ),
+              : Image.asset('assets/pexels-bruce-byereta-422939715-31961615.jpg', fit: BoxFit.cover),
         ),
-        Container(
-          height: 300,
-          width: double.infinity,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Colors.black.withOpacity(0.3),
-                Colors.black.withOpacity(0.7),
-              ],
-            ),
-          ),
-          padding: const EdgeInsets.all(24),
+        Positioned(
+          bottom: 40,
+          left: 20,
+          right: 20,
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.end,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Go Anywhere with Kerugoya',
-                style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
+                'Go Anywhere with\nKerugoya',
+                style: TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold, height: 1.1),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               const Text(
-                'Request a ride, order a delivery. Your city is in your hands.',
+                'Request a ride, order a delivery.\nYour city is in your hands.',
                 style: TextStyle(color: Colors.white70, fontSize: 18),
               ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.black,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              const SizedBox(height: 30),
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const CheckoutScreen())),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 15),
+                          decoration: BoxDecoration(
+                            color: Colors.black,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Center(child: Text('Request a Ride', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                        ),
                       ),
-                      onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const CheckoutScreen())),
-                      child: const Text('Ride', style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orange,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: InkWell(
+                        onTap: () {
+                           if (widget.onNavigate != null) widget.onNavigate!(1);
+                        },
+                        child: const Center(child: Text('Order Delivery', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold))),
                       ),
-                      onPressed: () {
-                         setState(() {
-                           _selectedCategory = 'All';
-                         });
-                         // Scroll down or just focus on products
-                      },
-                      child: const Text('Shop', style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
+          ),
+        ),
+        SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Image.asset('assets/logo.jpg', height: 40),
+                if (widget.userRole == 'GUEST')
+                  CircleAvatar(
+                    backgroundColor: Colors.white,
+                    child: IconButton(
+                      icon: const Icon(Icons.person_outline, color: Colors.black),
+                      onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const LoginScreen())),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildCategorySelector() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(
-          children: _categories.map((cat) {
-            final isSelected = _selectedCategory == cat;
-            return Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: GestureDetector(
-                onTap: () => setState(() => _selectedCategory = cat),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: isSelected ? Colors.black : Colors.grey[200],
-                    borderRadius: BorderRadius.circular(25),
-                  ),
-                  child: Text(
-                    cat,
-                    style: TextStyle(
-                      color: isSelected ? Colors.white : Colors.black,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
-        ),
+  Widget _buildQuickActions() {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('What can we help you find?', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildActionItem(Icons.bike_scooter, 'Ride', Colors.green[50]!, Colors.green, 0),
+              _buildActionItem(Icons.restaurant, 'Food', Colors.orange[50]!, Colors.orange, 1),
+              _buildActionItem(Icons.shopping_basket, 'Grocery', Colors.blue[50]!, Colors.blue, 1),
+              _buildActionItem(Icons.more_horiz, 'More', Colors.grey[100]!, Colors.black54, 1),
+            ],
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildBusinessSection(Business business) {
+  Widget _buildActionItem(IconData icon, String label, Color bg, Color iconColor, int targetTab) {
+    return InkWell(
+      onTap: () {
+        if (targetTab == 0) {
+           Navigator.of(context).push(MaterialPageRoute(builder: (context) => const CheckoutScreen()));
+        } else {
+           if (widget.onNavigate != null) widget.onNavigate!(targetTab);
+        }
+      },
+      child: Column(
+        children: [
+          Container(
+            width: 70,
+            height: 70,
+            decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(15)),
+            child: Icon(icon, color: iconColor, size: 30),
+          ),
+          const SizedBox(height: 8),
+          Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFeaturedSection() {
+    if (_isLoading) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                business.name,
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              if (business.description != null)
-                Text(
-                  business.description!,
-                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                ),
-            ],
-          ),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          child: Text('Featured near you', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
         ),
         SizedBox(
-          height: 240,
+          height: 200,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: business.products.length,
+            itemCount: _featuredBusinesses.length,
             itemBuilder: (context, index) {
-              final product = business.products[index];
-              return _buildProductCard(product, business.category == 'SERVICE');
+              final b = _featuredBusinesses[index];
+              return InkWell(
+                onTap: () {
+                  if (widget.onNavigate != null) widget.onNavigate!(1);
+                },
+                child: Container(
+                  width: 280,
+                  margin: const EdgeInsets.only(right: 12),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15),
+                    image: const DecorationImage(
+                      image: AssetImage('assets/logo.jpg'),
+                      fit: BoxFit.cover,
+                      opacity: 0.1,
+                    ),
+                    border: Border.all(color: Colors.grey[200]!),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text(b.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        Text(b.category, style: TextStyle(color: Colors.grey[600])),
+                      ],
+                    ),
+                  ),
+                ),
+              );
             },
           ),
         ),
@@ -305,86 +274,33 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildProductCard(Product product, bool isService) {
-    final cart = Provider.of<CartProvider>(context, listen: false);
+  Widget _buildPromotions() {
     return Container(
-      width: 200,
-      margin: const EdgeInsets.only(right: 16),
+      margin: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.black,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 15, offset: const Offset(0, 8)),
-        ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Container(
-            height: 120,
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-              image: const DecorationImage(
-                image: AssetImage('assets/logo.jpg'),
-                fit: BoxFit.cover,
-                opacity: 0.3,
-              ),
-            ),
-            child: Center(
-              child: Icon(
-                isService ? Icons.bike_scooter : Icons.shopping_bag_outlined,
-                size: 40,
-                color: Colors.orange,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  product.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                Text(
-                  'Ksh ${product.price.toInt()}',
-                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.orange, fontSize: 14),
-                ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(vertical: 0),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                    onPressed: () {
-                      if (isService) {
-                         Navigator.of(context).push(MaterialPageRoute(builder: (context) => const CheckoutScreen()));
-                      } else {
-                        cart.addItem(product);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('${product.name} added to cart'),
-                            behavior: SnackBarBehavior.floating,
-                            duration: const Duration(seconds: 1),
-                          ),
-                        );
-                      }
-                    },
-                    child: Text(isService ? 'Request' : 'Add to Cart', style: const TextStyle(fontSize: 12)),
-                  ),
+                const Text('Get 50% off your\nfirst delivery!', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 10),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black),
+                  onPressed: () {
+                     if (widget.onNavigate != null) widget.onNavigate!(1);
+                  },
+                  child: const Text('Claim Now'),
                 ),
               ],
             ),
           ),
+          const Icon(Icons.card_giftcard, color: Colors.orange, size: 60),
         ],
       ),
     );
