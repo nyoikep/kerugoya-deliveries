@@ -30,8 +30,8 @@ class SocketService with ChangeNotifier {
     });
 
     _socket?.onConnect((_) {
-      debugPrint('Socket connected');
-      // If there's a deliveryId, rejoin the room after reconnect
+      debugPrint('--- SOCKET CONNECTED ---');
+      debugPrint('ID: ${_socket?.id}');
       if (_currentDeliveryId != null) {
         joinDeliveryRoom(_currentDeliveryId!);
       }
@@ -39,8 +39,13 @@ class SocketService with ChangeNotifier {
     });
 
     _socket?.onDisconnect((_) {
-      debugPrint('Socket disconnected');
+      debugPrint('--- SOCKET DISCONNECTED ---');
       notifyListeners();
+    });
+
+    _socket?.on('rider_ping', (data) {
+      debugPrint('--- RIDER PING RECEIVED ---');
+      debugPrint('Data: $data');
     });
 
     _socket?.on('client_location_broadcast', (data) {
@@ -71,6 +76,17 @@ class SocketService with ChangeNotifier {
 
   void disconnect() {
     _socket?.disconnect();
+    _currentDeliveryId = null;
+    _otherUsersLocations.clear();
+    notifyListeners();
+  }
+
+  void reset() {
+    disconnect();
+    _socket?.off('client_location_broadcast');
+    _socket?.off('rider_location_broadcast');
+    _socket?.off('admin_location_update');
+    _socket?.off('rider_ping');
   }
 
   void joinDeliveryRoom(String deliveryId) {

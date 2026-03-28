@@ -19,7 +19,7 @@ void main() {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
-        Provider(create: (_) => SocketService()),
+        ChangeNotifierProvider(create: (_) => SocketService()),
         ProxyProvider<AuthProvider, ProductService>(
           update: (_, auth, __) => ProductService(auth),
         ),

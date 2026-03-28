@@ -5,6 +5,7 @@ import 'package:kerugoya_deliveries_mobile/models/business.dart';
 import 'package:kerugoya_deliveries_mobile/services/business_service.dart';
 import 'package:kerugoya_deliveries_mobile/screens/login_screen.dart';
 import 'package:kerugoya_deliveries_mobile/screens/checkout_screen.dart';
+import 'package:kerugoya_deliveries_mobile/services/socket_service.dart';
 import 'package:video_player/video_player.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -284,7 +285,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 else
                   IconButton(
                     icon: const Icon(Icons.logout, color: Colors.white),
-                    onPressed: () => Provider.of<AuthProvider>(context, listen: false).logout(),
+                    onPressed: () {
+                      Provider.of<SocketService>(context, listen: false).reset();
+                      Provider.of<AuthProvider>(context, listen: false).logout();
+                    },
                   ),
               ],
             ),

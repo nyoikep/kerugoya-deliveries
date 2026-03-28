@@ -103,6 +103,13 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
   }
 
   @override
+  void dispose() {
+    final socketService = Provider.of<SocketService>(context, listen: false);
+    socketService.socket?.off('rider_ping');
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(

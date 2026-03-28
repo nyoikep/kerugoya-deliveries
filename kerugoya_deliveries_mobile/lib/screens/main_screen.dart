@@ -52,6 +52,11 @@ class _MainScreenState extends State<MainScreen> {
         });
       }),
     ];
+    
+    // Safety check for index out of bounds after role change
+    if (_selectedIndex >= _widgetOptions.length) {
+      _selectedIndex = 0;
+    }
   }
 
   void _onItemTapped(int index) {
@@ -66,8 +71,15 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   @override
+  void didUpdateWidget(MainScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.userRole != widget.userRole) {
+      _updateWidgetOptions();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    _updateWidgetOptions(); 
     final cart = Provider.of<CartProvider>(context);
 
     return Scaffold(

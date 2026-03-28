@@ -35,6 +35,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   void initState() {
     super.initState();
     _getUserLocation();
+    Provider.of<SocketService>(context, listen: false).connectSocket();
   }
 
   Future<void> _getUserLocation() async {

@@ -86,8 +86,20 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
   }
 
   @override
+  void dispose() {
+    final socketService = Provider.of<SocketService>(context, listen: false);
+    socketService.socket?.off('admin_location_update');
+    socketService.socket?.off('rider_ping');
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context);
+    
+    if (auth.userRole != 'ADMIN') {
+      return const Scaffold(body: Center(child: Text('Unauthorized access.')));
+    }
     
     return Scaffold(
       appBar: AppBar(
@@ -105,7 +117,13 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
             decoration: BoxDecoration(color: Colors.red[100], borderRadius: BorderRadius.circular(10)),
             child: const Text('ADMIN', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 10)),
           ),
-          IconButton(icon: const Icon(Icons.logout), onPressed: () => auth.logout()),
+          IconButton(
+            icon: const Icon(Icons.logout), 
+            onPressed: () {
+              Provider.of<SocketService>(context, listen: false).reset();
+              auth.logout();
+            }
+          ),
         ],
       ),
       body: _isLoadingData 

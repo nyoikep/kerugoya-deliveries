@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:kerugoya_deliveries_mobile/screens/rider_home_screen.dart';
 import 'package:kerugoya_deliveries_mobile/screens/rider_deliveries_screen.dart';
 import 'package:kerugoya_deliveries_mobile/screens/rider_profile_screen.dart';
+import 'package:kerugoya_deliveries_mobile/services/socket_service.dart';
 import 'package:provider/provider.dart';
 import 'package:kerugoya_deliveries_mobile/services/auth_provider.dart';
 
@@ -45,7 +46,13 @@ class _RiderMainScreenState extends State<RiderMainScreen> {
           ],
         ),
         actions: [
-          IconButton(icon: const Icon(Icons.logout), onPressed: () => auth.logout()),
+          IconButton(
+            icon: const Icon(Icons.logout), 
+            onPressed: () {
+              Provider.of<SocketService>(context, listen: false).reset();
+              auth.logout();
+            }
+          ),
         ],
       ),
       body: _riderWidgetOptions.elementAt(_selectedIndex),
