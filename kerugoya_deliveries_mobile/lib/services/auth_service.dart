@@ -2,7 +2,7 @@ import 'package:kerugoya_deliveries_mobile/services/api_service.dart';
 import 'dart:convert';
 
 class AuthService {
-  // A helper to create a fake JWT-like token for mock mode
+  // A helper to create a fake JWT-like token for dev mode
   String _createMockToken(String role, String email) {
     final header = base64Url.encode(utf8.encode(json.encode({"alg": "HS256", "typ": "JWT"})));
     final payload = base64Url.encode(utf8.encode(json.encode({
@@ -14,7 +14,6 @@ class AuthService {
     return "$header.$payload.mocksignature";
   }
 
-  // Login method returns the JWT token string directly
   Future<String> login(String email, String password) async {
     try {
       final response = await ApiService.post('auth/login', {
@@ -24,16 +23,20 @@ class AuthService {
       if (response.containsKey('token')) {
         return response['token'];
       }
-      throw HttpException(message: 'Login successful but no token received', statusCode: 200);
+      throw HttpException(message: 'Login failed: Invalid response', statusCode: 500);
     } catch (e) {
-      print('Login error, using mock login: $e');
-      if (email.contains('admin')) return _createMockToken('ADMIN', email);
-      if (email.contains('rider')) return _createMockToken('RIDER', email);
-      return _createMockToken('CLIENT', email);
+      print('AuthService Login Error: $e');
+      // ONLY allow mock login for specific test accounts to keep it safe
+      if (email == 'admin@test.com' && password == 'admin123') return _createMockToken('ADMIN', email);
+      if (email == 'rider@test.com' && password == 'rider123') return _createMockToken('RIDER', email);
+      if (email == 'client@test.com' && password == 'client123') return _createMockToken('CLIENT', email);
+      
+      // If not a test account, rethrow the error so user knows it failed
+      if (e is HttpException) rethrow;
+      throw HttpException(message: 'Connection error. Please try again later.', statusCode: 500);
     }
   }
 
-  // Generic register method now accepts a role and returns the JWT token string
   Future<String> register(String name, String email, String phone, String password, String role) async {
     try {
       final response = await ApiService.post('auth/register', {
@@ -46,14 +49,14 @@ class AuthService {
       if (response.containsKey('token')) {
         return response['token'];
       }
-      throw HttpException(message: 'Registration successful but no token received', statusCode: 200);
+      throw HttpException(message: 'Registration failed', statusCode: 500);
     } catch (e) {
-      print('Registration error, using mock registration: $e');
-      return _createMockToken(role, email);
+      print('AuthService Register Error: $e');
+      if (e is HttpException) rethrow;
+      throw HttpException(message: 'Failed to register. Please check your connection.', statusCode: 500);
     }
   }
 
-  // Specific method for rider registration
   Future<String> registerRider(String name, String email, String phone, String idNumber, String motorcyclePlateNumber, String password, {String? idCardUrl}) async {
     try {
       final response = await ApiService.post('auth/register', {
@@ -69,10 +72,11 @@ class AuthService {
       if (response.containsKey('token')) {
         return response['token'];
       }
-      throw HttpException(message: 'Rider registration successful but no token received', statusCode: 200);
+      throw HttpException(message: 'Rider registration failed', statusCode: 500);
     } catch (e) {
-      print('Rider registration error, using mock registration: $e');
-      return _createMockToken('RIDER', email);
+      print('AuthService Rider Register Error: $e');
+      if (e is HttpException) rethrow;
+      throw HttpException(message: 'Failed to register rider.', statusCode: 500);
     }
   }
 }

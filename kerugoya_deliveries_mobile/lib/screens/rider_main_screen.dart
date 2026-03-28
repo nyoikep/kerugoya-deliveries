@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:kerugoya_deliveries_mobile/screens/rider_home_screen.dart'; // Import RiderHomeScreen
-import 'package:kerugoya_deliveries_mobile/screens/rider_deliveries_screen.dart'; // Import RiderDeliveriesScreen
-import 'package:kerugoya_deliveries_mobile/screens/rider_profile_screen.dart'; // Import RiderProfileScreen
+import 'package:kerugoya_deliveries_mobile/screens/rider_home_screen.dart';
+import 'package:kerugoya_deliveries_mobile/screens/rider_deliveries_screen.dart';
+import 'package:kerugoya_deliveries_mobile/screens/rider_profile_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:kerugoya_deliveries_mobile/services/auth_provider.dart';
 
 class RiderMainScreen extends StatefulWidget {
   const RiderMainScreen({super.key});
@@ -27,29 +29,36 @@ class _RiderMainScreenState extends State<RiderMainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final auth = Provider.of<AuthProvider>(context);
+    
     return Scaffold(
-      body: Center( // Wrap with Center to ensure content is always centered within the body
-        child: _riderWidgetOptions.elementAt(_selectedIndex),
+      appBar: AppBar(
+        title: Row(
+          children: [
+            const Text('Rider Portal', style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(color: Colors.blue[100], borderRadius: BorderRadius.circular(5)),
+              child: const Text('RIDER', style: TextStyle(fontSize: 10, color: Colors.blue, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(icon: const Icon(Icons.logout), onPressed: () => auth.logout()),
+        ],
       ),
+      body: _riderWidgetOptions.elementAt(_selectedIndex),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.delivery_dining),
-            label: 'My Deliveries', // Updated label
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.delivery_dining), label: 'Active'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.amber[800],
         unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed, // Added type for consistent display
+        type: BottomNavigationBarType.fixed,
         onTap: _onItemTapped,
       ),
     );

@@ -19,6 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _showMockButtons = false;
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -45,11 +46,11 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } on HttpException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message), backgroundColor: Colors.red));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Login failed: ${e.toString()}')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Login failed: ${e.toString()}'), backgroundColor: Colors.red));
       }
     } finally {
       if (mounted) {
@@ -60,16 +61,22 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _mockLogin(String role) async {
      setState(() { _isLoading = true; });
-     String email = "test@client.com";
-     if (role == 'RIDER') email = "test@rider.com";
-     if (role == 'ADMIN') email = "test@admin.com";
+     String email = "client@test.com";
+     String pass = "client123";
+     if (role == 'RIDER') { email = "rider@test.com"; pass = "rider123"; }
+     if (role == 'ADMIN') { email = "admin@test.com"; pass = "admin123"; }
      
-     final String token = await AuthService().login(email, "password");
-     if (mounted) {
-        Provider.of<AuthProvider>(context, listen: false).saveToken(token);
-        Navigator.of(context).pop();
+     try {
+       final String token = await AuthService().login(email, pass);
+       if (mounted) {
+          Provider.of<AuthProvider>(context, listen: false).saveToken(token);
+          Navigator.of(context).pop();
+       }
+     } catch (e) {
+       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Mock login failed. Check dev accounts.")));
+     } finally {
+       if (mounted) setState(() { _isLoading = false; });
      }
-     setState(() { _isLoading = false; });
   }
 
   @override
@@ -102,8 +109,15 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(labelText: 'Password', prefixIcon: Icon(Icons.lock)),
+                obscureText: _obscurePassword,
+                decoration: InputDecoration(
+                  labelText: 'Password', 
+                  prefixIcon: const Icon(Icons.lock),
+                  suffixIcon: IconButton(
+                    icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                  )
+                ),
                 validator: (value) => value == null || value.isEmpty ? 'Enter password' : null,
               ),
               const SizedBox(height: 24),
@@ -117,7 +131,7 @@ class _LoginScreenState extends State<LoginScreen> {
               
               if (_showMockButtons) ...[
                 const SizedBox(height: 16),
-                const Text("DEV MODE: MOCK LOGIN", style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.bold)),
+                const Text("DEV MODE: QUICK ACCOUNTS", style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,

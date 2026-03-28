@@ -21,6 +21,7 @@ class _RegisterRiderScreenState extends State<RegisterRiderScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   String? _idCardPlaceholder;
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -35,7 +36,7 @@ class _RegisterRiderScreenState extends State<RegisterRiderScreen> {
 
   void _pickIdCard() {
     setState(() {
-      _idCardPlaceholder = "id_card_sample.jpg"; // Simulated selection
+      _idCardPlaceholder = "id_card_sample.jpg"; 
     });
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('ID/Passport selected (Simulation)')),
@@ -77,15 +78,11 @@ class _RegisterRiderScreenState extends State<RegisterRiderScreen> {
       }
     } on HttpException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message)),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message), backgroundColor: Colors.red));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Registration failed: ${e.toString()}')),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Registration failed: ${e.toString()}'), backgroundColor: Colors.red));
       }
     } finally {
       if (mounted) {
@@ -174,8 +171,15 @@ class _RegisterRiderScreenState extends State<RegisterRiderScreen> {
               const SizedBox(height: 24),
               TextFormField(
                 controller: _passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(labelText: 'Password', prefixIcon: Icon(Icons.lock)),
+                obscureText: _obscurePassword,
+                decoration: InputDecoration(
+                  labelText: 'Password', 
+                  prefixIcon: const Icon(Icons.lock),
+                  suffixIcon: IconButton(
+                    icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                  )
+                ),
                 validator: (value) => value == null || value.length < 6 ? 'Password must be at least 6 characters long' : null,
               ),
               const SizedBox(height: 24),

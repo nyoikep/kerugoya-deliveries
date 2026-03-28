@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:kerugoya_deliveries_mobile/services/auth_provider.dart';
 import 'package:kerugoya_deliveries_mobile/services/socket_service.dart';
+import 'package:kerugoya_deliveries_mobile/services/rider_service.dart';
+import 'package:kerugoya_deliveries_mobile/services/delivery_service.dart';
+import 'package:kerugoya_deliveries_mobile/models/delivery_request.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class AdminMainScreen extends StatefulWidget {
@@ -14,21 +17,49 @@ class AdminMainScreen extends StatefulWidget {
 class _AdminMainScreenState extends State<AdminMainScreen> {
   GoogleMapController? _mapController;
   final Map<String, Marker> _markers = {};
+  List<Rider> _allRiders = [];
+  List<DeliveryRequest> _activeDeliveries = [];
+  bool _isLoadingData = true;
 
   @override
   void initState() {
     super.initState();
+    _setupSocket();
+    _loadInitialData();
+  }
+
+  void _setupSocket() {
     final socketService = Provider.of<SocketService>(context, listen: false);
     socketService.connectSocket();
-    
-    // Correct way to listen for connect in socket_io_client
     socketService.socket?.on('connect', (_) {
       socketService.socket?.emit('joinAdminRoom');
     });
-    
     socketService.socket?.on('admin_location_update', (data) {
       _updateMarker(data);
     });
+    // Also listen for new delivery pings to refresh list
+    socketService.socket?.on('rider_ping', (_) => _loadInitialData());
+  }
+
+  Future<void> _loadInitialData() async {
+    try {
+      final riderService = Provider.of<RiderService>(context, listen: false);
+      final deliveryService = Provider.of<DeliveryService>(context, listen: false);
+      
+      final riders = await riderService.getAvailableRiders();
+      // For mock purposes, let's assume available deliveries are "active" for admin
+      final deliveries = await deliveryService.getAvailableDeliveryRequests();
+      
+      if (mounted) {
+        setState(() {
+          _allRiders = riders;
+          _activeDeliveries = deliveries;
+          _isLoadingData = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() { _isLoadingData = false; });
+    }
   }
 
   void _updateMarker(Map<String, dynamic> data) {
@@ -44,7 +75,7 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
       icon: BitmapDescriptor.defaultMarkerWithHue(
         type == 'RIDER' ? BitmapDescriptor.hueAzure : BitmapDescriptor.hueRed
       ),
-      infoWindow: InfoWindow(title: '$type - $deliveryId'),
+      infoWindow: InfoWindow(title: '$type - Request $deliveryId'),
     );
 
     if (mounted) {
@@ -56,39 +87,89 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final auth = Provider.of<AuthProvider>(context);
+    
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Admin Dashboard - Live Tracking'),
+        title: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Admin Command Center', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            Text('Live Operational View', style: TextStyle(fontSize: 12, color: Colors.grey)),
+          ],
+        ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              Provider.of<AuthProvider>(context, listen: false).logout();
-            },
+          Container(
+            margin: const EdgeInsets.only(right: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(color: Colors.red[100], borderRadius: BorderRadius.circular(10)),
+            child: const Text('ADMIN', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 10)),
           ),
+          IconButton(icon: const Icon(Icons.logout), onPressed: () => auth.logout()),
         ],
       ),
-      body: Column(
+      body: _isLoadingData 
+        ? const Center(child: CircularProgressIndicator())
+        : Column(
+            children: [
+              _buildStatsBar(),
+              Expanded(
+                flex: 3,
+                child: GoogleMap(
+                  initialCameraPosition: const CameraPosition(target: LatLng(-0.505, 37.285), zoom: 13),
+                  onMapCreated: (c) => _mapController = c,
+                  markers: _markers.values.toSet(),
+                ),
+              ),
+              Expanded(
+                flex: 2,
+                child: _buildInfoTabs(),
+              ),
+            ],
+          ),
+    );
+  }
+
+  Widget _buildStatsBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      color: Colors.white,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            color: Colors.grey[100],
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildStatCard('Active Riders', '5', Colors.blue),
-                _buildStatCard('Active Deliveries', _markers.length.toString(), Colors.green),
-              ],
-            ),
+          _buildStatItem('Riders', _allRiders.length.toString(), Colors.blue),
+          _buildStatItem('Requests', _activeDeliveries.length.toString(), Colors.orange),
+          _buildStatItem('Live', _markers.length.toString(), Colors.green),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem(String label, String value, Color color) {
+    return Column(
+      children: [
+        Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
+        Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+      ],
+    );
+  }
+
+  Widget _buildInfoTabs() {
+    return DefaultTabController(
+      length: 2,
+      child: Column(
+        children: [
+          const TabBar(
+            tabs: [Tab(text: 'Active Requests'), Tab(text: 'All Riders')],
+            labelColor: Colors.black,
+            indicatorColor: Colors.orange,
           ),
           Expanded(
-            child: GoogleMap(
-              initialCameraPosition: const CameraPosition(
-                target: LatLng(-0.505, 37.285),
-                zoom: 13,
-              ),
-              onMapCreated: (c) => _mapController = c,
-              markers: _markers.values.toSet(),
+            child: TabBarView(
+              children: [
+                _buildRequestsList(),
+                _buildRidersList(),
+              ],
             ),
           ),
         ],
@@ -96,12 +177,38 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
     );
   }
 
-  Widget _buildStatCard(String title, String value, Color color) {
-    return Column(
-      children: [
-        Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: color)),
-        Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-      ],
+  Widget _buildRequestsList() {
+    if (_activeDeliveries.isEmpty) return const Center(child: Text('No active requests.'));
+    return ListView.builder(
+      itemCount: _activeDeliveries.length,
+      itemBuilder: (context, index) {
+        final d = _activeDeliveries[index];
+        return ListTile(
+          leading: const Icon(Icons.local_shipping, color: Colors.orange),
+          title: Text('From: ${d.clientLocation}'),
+          subtitle: Text('To: ${d.destination} • Status: ${d.status}'),
+          trailing: const Text('LIVE', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 10)),
+        );
+      },
+    );
+  }
+
+  Widget _buildRidersList() {
+    if (_allRiders.isEmpty) return const Center(child: Text('No riders registered.'));
+    return ListView.builder(
+      itemCount: _allRiders.length,
+      itemBuilder: (context, index) {
+        final r = _allRiders[index];
+        return ListTile(
+          leading: const CircleAvatar(child: Icon(Icons.person)),
+          title: Text(r.name),
+          subtitle: Text('Plate: ${r.motorcyclePlateNumber}'),
+          trailing: Container(
+            width: 10, height: 10,
+            decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+          ),
+        );
+      },
     );
   }
 }
