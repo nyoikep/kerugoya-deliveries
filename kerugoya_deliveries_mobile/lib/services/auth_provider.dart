@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:jwt_decoder/jwt_decoder.dart'; // Need to add this to pubspec.yaml
+import 'package:jwt_decoder/jwt_decoder.dart';
 
 class AuthProvider extends ChangeNotifier {
   String? _token;
-  String? _userRole; // 'CLIENT' or 'RIDER'
+  String? _userRole;
 
   String? get token => _token;
   String? get userRole => _userRole;
@@ -15,15 +15,20 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> _loadToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    _token = prefs.getString('jwt_token');
-    if (_token != null && !JwtDecoder.isExpired(_token!)) {
-      _userRole = JwtDecoder.decode(_token!)['role'];
-    } else {
-      _token = null;
-      _userRole = null;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _token = prefs.getString('jwt_token');
+      if (_token != null && !JwtDecoder.isExpired(_token!)) {
+        _userRole = JwtDecoder.decode(_token!)['role'];
+      } else {
+        _token = null;
+        _userRole = null;
+      }
+    } catch (e) {
+      debugPrint('Error loading token: $e');
+    } finally {
+      notifyListeners();
     }
-    notifyListeners();
   }
 
   Future<void> saveToken(String newToken) async {
@@ -41,6 +46,7 @@ class AuthProvider extends ChangeNotifier {
     await prefs.remove('jwt_token');
     _token = null;
     _userRole = null;
+    // Notify after state is cleared
     notifyListeners();
   }
 }

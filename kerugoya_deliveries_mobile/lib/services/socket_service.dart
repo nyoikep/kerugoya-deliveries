@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 
 class SocketService with ChangeNotifier {
   io.Socket? _socket;
-  // Get base URL from environment, strip '/api' if present for socket connection
   static const String _serverBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
     defaultValue: 'http://localhost:3000/api',
@@ -11,11 +10,10 @@ class SocketService with ChangeNotifier {
   final String _serverUrl = _serverBaseUrl.endsWith('/api') ? _serverBaseUrl.substring(0, _serverBaseUrl.length - 4) : _serverBaseUrl;
   
   String? _currentDeliveryId;
+  bool _isDisposed = false;
 
-  // Expose socket via a public getter
   io.Socket? get socket => _socket;
 
-  // For storing other users' locations
   final Map<String, Map<String, double>> _otherUsersLocations = {};
   Map<String, Map<String, double>> get otherUsersLocations => _otherUsersLocations;
 
@@ -23,46 +21,55 @@ class SocketService with ChangeNotifier {
     _initSocket();
   }
 
+  @override
+  void dispose() {
+    _isDisposed = true;
+    _socket?.dispose();
+    super.dispose();
+  }
+
+  void _safeNotifyListeners() {
+    if (!_isDisposed) {
+      notifyListeners();
+    }
+  }
+
   void _initSocket() {
     _socket = io.io(_serverUrl, <String, dynamic>{
       'transports': ['websocket'],
-      'autoConnect': false, // Control connection manually
+      'autoConnect': false,
     });
 
     _socket?.onConnect((_) {
       debugPrint('--- SOCKET CONNECTED ---');
-      debugPrint('ID: ${_socket?.id}');
       if (_currentDeliveryId != null) {
         joinDeliveryRoom(_currentDeliveryId!);
       }
-      notifyListeners();
+      _safeNotifyListeners();
     });
 
     _socket?.onDisconnect((_) {
       debugPrint('--- SOCKET DISCONNECTED ---');
-      notifyListeners();
+      _safeNotifyListeners();
     });
 
     _socket?.on('rider_ping', (data) {
       debugPrint('--- RIDER PING RECEIVED ---');
-      debugPrint('Data: $data');
     });
 
     _socket?.on('client_location_broadcast', (data) {
-      // Assuming data = { deliveryId, latitude, longitude }
       final deliveryId = data['deliveryId'];
-      if (deliveryId != null && data != null && data['latitude'] != null && data['longitude'] != null) {
+      if (deliveryId != null && data['latitude'] != null && data['longitude'] != null) {
         _otherUsersLocations[deliveryId] = {'latitude': data['latitude'], 'longitude': data['longitude']};
-        notifyListeners();
+        _safeNotifyListeners();
       }
     });
 
     _socket?.on('rider_location_broadcast', (data) {
-      // Assuming data = { deliveryId, latitude, longitude }
       final deliveryId = data['deliveryId'];
-      if (deliveryId != null && data != null && data['latitude'] != null && data['longitude'] != null) {
+      if (deliveryId != null && data['latitude'] != null && data['longitude'] != null) {
         _otherUsersLocations[deliveryId] = {'latitude': data['latitude'], 'longitude': data['longitude']};
-        notifyListeners();
+        _safeNotifyListeners();
       }
     });
 
@@ -70,7 +77,7 @@ class SocketService with ChangeNotifier {
     _socket?.onError((error) => debugPrint('Socket Error: $error'));
   }
 
-  void connectSocket() { // Renamed from connect()
+  void connectSocket() {
     _socket?.connect();
   }
 
@@ -78,7 +85,7 @@ class SocketService with ChangeNotifier {
     _socket?.disconnect();
     _currentDeliveryId = null;
     _otherUsersLocations.clear();
-    notifyListeners();
+    _safeNotifyListeners();
   }
 
   void reset() {
@@ -92,15 +99,13 @@ class SocketService with ChangeNotifier {
   void joinDeliveryRoom(String deliveryId) {
     _currentDeliveryId = deliveryId;
     _socket?.emit('joinDeliveryRoom', deliveryId);
-    debugPrint('Emitting joinDeliveryRoom: $deliveryId');
   }
 
   void leaveDeliveryRoom(String deliveryId) {
-    _socket?.emit('leaveDeliveryRoom', deliveryId); // Assuming a leave event on backend
+    _socket?.emit('leaveDeliveryRoom', deliveryId);
     _currentDeliveryId = null;
-    debugPrint('Emitting leaveDeliveryRoom: $deliveryId');
     _otherUsersLocations.remove(deliveryId);
-    notifyListeners();
+    _safeNotifyListeners();
   }
 
   void emitClientLocationUpdate(String deliveryId, double latitude, double longitude) {
