@@ -10,7 +10,7 @@ interface GoogleMapsContextType {
 
 const GoogleMapsContext = createContext<GoogleMapsContextType | undefined>(undefined);
 
-const libraries: ("places" | "geometry" | "drawing" | "visualization")[] = ["places"];
+const libraries: ("places" | "geometry" | "drawing" | "visualization")[] = ["places", "geometry"];
 
 export const GoogleMapsProvider = ({ children }: { children: ReactNode }) => {
   const { isLoaded, loadError } = useJsApiLoader({

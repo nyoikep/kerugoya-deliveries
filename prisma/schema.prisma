@@ -20,6 +20,7 @@ model User {
   password           String
   name               String?
   role               String            @default("CLIENT")
+  status             String            @default("APPROVED") // PENDING, APPROVED, REJECTED
   loyaltyPoints      Int               @default(0)
   fcmToken           String?
   resetToken         String?

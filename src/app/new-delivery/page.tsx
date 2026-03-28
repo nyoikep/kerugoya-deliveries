@@ -25,6 +25,8 @@ function NewDeliveryContent() {
   const [destinationLocation, setDestinationLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [availableRiders, setAvailableRiders] = useState<Rider[]>([]);
   const [selectedRiderId, setSelectedRiderId] = useState<string | null>(null);
+  const [estimatedDistance, setEstimatedDistance] = useState<number | null>(null);
+  const [estimatedPrice, setEstimatedPrice] = useState<number | null>(null);
   const [error, setError] = useState('');
   const [step, setStep] = useState<CheckoutStep>('pickup');
   const router = useRouter();
@@ -33,6 +35,24 @@ function NewDeliveryContent() {
 
   const initialPickup = searchParams.get('pickup');
   const initialDestination = searchParams.get('destination');
+
+  // Pricing constants
+  const BASE_FEE = 2.0;
+  const PER_KM_RATE = 0.5;
+
+  // Calculate distance and price
+  useEffect(() => {
+    if (pickupLocation && destinationLocation && window.google) {
+      const pickup = new google.maps.LatLng(pickupLocation.lat, pickupLocation.lng);
+      const destination = new google.maps.LatLng(destinationLocation.lat, destinationLocation.lng);
+      const distanceInMeters = google.maps.geometry.spherical.computeDistanceBetween(pickup, destination);
+      const distanceInKm = distanceInMeters / 1000;
+      
+      setEstimatedDistance(distanceInKm);
+      const tripPrice = BASE_FEE + (distanceInKm * PER_KM_RATE);
+      setEstimatedPrice(tripPrice);
+    }
+  }, [pickupLocation, destinationLocation]);
 
   // Simulated driver data - place around Kerugoya
   const simulatedDrivers = useMemo(() => ([
@@ -185,7 +205,42 @@ function NewDeliveryContent() {
           )}
         </div>
 
+        {/* Trip Summary - shown when both locations are selected */}
+        {(pickupLocation && destinationLocation) && (
+          <div className="mb-8 p-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg shadow-sm">
+            <h3 className="text-xl font-bold text-blue-900 dark:text-blue-100 mb-4 flex items-center">
+              <Bike className="h-6 w-6 mr-2 text-blue-500" /> Trip Metering System
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-blue-700 dark:text-blue-300">Estimated Distance</p>
+                <p className="text-xl font-bold dark:text-white">
+                  {estimatedDistance ? `${estimatedDistance.toFixed(2)} km` : 'Calculating...'}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-blue-700 dark:text-blue-300">Estimated Trip Fee</p>
+                <p className="text-xl font-bold dark:text-white">
+                  {estimatedPrice ? `$${estimatedPrice.toFixed(2)}` : 'Calculating...'}
+                </p>
+              </div>
+            </div>
+            {estimatedPrice && (
+              <div className="mt-4 pt-4 border-t border-blue-200 dark:border-blue-700 flex justify-between items-center">
+                <span className="font-bold text-gray-900 dark:text-gray-100">Grand Total (Cart + Trip):</span>
+                <span className="text-2xl font-black text-blue-600 dark:text-blue-400">
+                  ${(getTotalPrice() + estimatedPrice).toFixed(2)}
+                </span>
+              </div>
+            )}
+            <p className="text-[10px] text-blue-600 dark:text-blue-400 mt-2 italic">
+              * Final price may vary based on actual route taken by rider.
+            </p>
+          </div>
+        )}
+
         <form onSubmit={step === 'select-rider' ? handleSubmit : handleNextStep}>
+
           {step === 'pickup' && (
             <div className="mb-8">
               <label className="block text-gray-700 dark:text-gray-300 font-semibold mb-3 flex items-center">

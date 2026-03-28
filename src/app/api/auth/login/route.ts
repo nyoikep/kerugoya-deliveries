@@ -32,6 +32,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
     }
 
+    // Check account status
+    if (user.status === 'PENDING') {
+      return NextResponse.json({ message: 'Account pending approval. Please contact administrator.' }, { status: 403 });
+    }
+    if (user.status === 'REJECTED') {
+      return NextResponse.json({ message: 'Account rejected. Please contact administrator.' }, { status: 403 });
+    }
+
     // Generate JWT Token
     // Use fallback for development/demo safety
     const jwtSecret = process.env.JWT_SECRET || 'kerugoya_fallback_secret_2026';

@@ -55,6 +55,7 @@ export async function POST(req: NextRequest) {
         password: hashedPassword,
         name,
         role: role || 'CLIENT',
+        status: role === 'RIDER' ? 'PENDING' : 'APPROVED',
         idNumber: role === 'RIDER' ? idNumber : null,
         idCardUrl: role === 'RIDER' ? idCardUrl : null,
         motorcyclePlateNumber: role === 'RIDER' ? motorcyclePlateNumber : null,

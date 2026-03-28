@@ -14,6 +14,7 @@ export default function AdminPage() {
   const [error, setError] = useState<string | null>(null);
   const [riders, setRiders] = useState<any[]>([]);
   const [deliveries, setDeliveries] = useState<any[]>([]);
+  const [pendingUsers, setPendingUsers] = useState<any[]>([]);
   
   const router = useRouter();
 
@@ -49,13 +50,15 @@ export default function AdminPage() {
 
     const fetchData = async (token: string) => {
       try {
-        const [ridersRes, deliveriesRes] = await Promise.all([
+        const [ridersRes, deliveriesRes, pendingRes] = await Promise.all([
           fetch('/api/riders', { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch('/api/deliveries', { headers: { 'Authorization': `Bearer ${token}` } })
+          fetch('/api/deliveries', { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch('/api/admin/users', { headers: { 'Authorization': `Bearer ${token}` } })
         ]);
         
         if (ridersRes.ok) setRiders(await ridersRes.json());
         if (deliveriesRes.ok) setDeliveries(await deliveriesRes.json());
+        if (pendingRes.ok) setPendingUsers(await pendingRes.json());
       } catch (e) {
         console.error("Error fetching admin data:", e);
       } finally {
@@ -65,6 +68,30 @@ export default function AdminPage() {
 
     checkAdmin();
   }, []);
+
+  const handleUpdateStatus = async (userId: string, newStatus: string) => {
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ userId, status: newStatus })
+      });
+      if (res.ok) {
+        setPendingUsers(prev => prev.filter(u => u.id !== userId));
+        if (newStatus === 'APPROVED') {
+          // Re-fetch riders if it was a rider
+          const ridersRes = await fetch('/api/riders', { headers: { 'Authorization': `Bearer ${token}` } });
+          if (ridersRes.ok) setRiders(await ridersRes.json());
+        }
+      }
+    } catch (e) {
+      console.error("Error updating user status:", e);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -135,6 +162,55 @@ export default function AdminPage() {
 
           {/* Active Lists */}
           <div className="space-y-8">
+            {/* Activation Requests */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-red-200 dark:border-red-900/30">
+              <div className="p-4 border-b dark:border-gray-700 font-bold dark:text-white flex items-center bg-red-50 dark:bg-red-900/10">
+                <ShieldCheck className="mr-2 h-4 w-4 text-red-500" />
+                Activation Requests ({pendingUsers.length})
+              </div>
+              <div className="max-h-[300px] overflow-y-auto">
+                {pendingUsers.length > 0 ? pendingUsers.map((u: any) => (
+                  <div key={u.id} className="p-4 border-b dark:border-gray-700 last:border-0">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <p className="text-sm font-bold dark:text-white">{u.name}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{u.role} | {u.phone}</p>
+                      </div>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
+                        u.status === 'PENDING' ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'
+                      }`}>
+                        {u.status}
+                      </span>
+                    </div>
+                    {u.role === 'RIDER' && (
+                      <div className="mb-3 p-2 bg-gray-50 dark:bg-gray-700/50 rounded text-[11px] text-gray-600 dark:text-gray-300">
+                        <p>ID: {u.idNumber}</p>
+                        <p>Plate: {u.motorcyclePlateNumber}</p>
+                      </div>
+                    )}
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => handleUpdateStatus(u.id, 'APPROVED')}
+                        className="flex-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded transition-colors"
+                      >
+                        Approve
+                      </button>
+                      {u.status === 'PENDING' && (
+                        <button 
+                          onClick={() => handleUpdateStatus(u.id, 'REJECTED')}
+                          className="flex-1 px-3 py-1.5 bg-gray-200 hover:bg-red-600 hover:text-white text-gray-700 text-xs font-bold rounded transition-colors"
+                        >
+                          Reject
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )) : (
+                  <div className="p-8 text-center text-gray-500 text-sm italic">No pending requests</div>
+                )}
+              </div>
+            </div>
+
             {/* Active Requests */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border dark:border-gray-700">
               <div className="p-4 border-b dark:border-gray-700 font-bold dark:text-white flex items-center">
