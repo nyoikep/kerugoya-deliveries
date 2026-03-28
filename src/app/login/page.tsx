@@ -6,12 +6,14 @@ import { jwtDecode } from 'jwt-decode';
 import Link from 'next/link';
 import Image from 'next/image';
 import NoSSR from '@/components/NoSSR';
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
   const [loginType, setLoginType] = useState('email');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
 
@@ -21,31 +23,35 @@ export default function LoginPage() {
 
     const body = loginType === 'email' ? { email, password } : { phone, password };
 
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
 
-    if (res.ok) {
-      const data = await res.json();
-      localStorage.setItem('token', data.token);
-      
-      const decodedToken = jwtDecode(data.token) as { role: string };
-      localStorage.setItem('user', JSON.stringify(data.user));
+      if (res.ok) {
+        const data = await res.json();
+        localStorage.setItem('token', data.token);
+        
+        const decodedToken = jwtDecode(data.token) as { role: string };
+        localStorage.setItem('user', JSON.stringify(data.user));
 
-      if (decodedToken.role === 'RIDER') {
-        router.push('/rider/dashboard');
+        if (decodedToken.role === 'ADMIN') {
+          router.push('/admin');
+        } else if (decodedToken.role === 'RIDER') {
+          router.push('/rider/dashboard');
+        } else {
+          router.push('/dashboard');
+        }
+        // Force refresh to update NavBar
+        window.location.reload();
       } else {
-        router.push('/dashboard');
+        const data = await res.json();
+        setError(data.message || 'Login failed. Please check your credentials.');
       }
-    } else {
-      const data = await res.json();
-      if (data.message === 'Riders must log in through the rider portal.') {
-        setError('Riders must log in through the rider portal.');
-      } else {
-        setError(data.message);
-      }
+    } catch (err) {
+      setError('An error occurred. Please try again.');
     }
   };
 
@@ -122,19 +128,28 @@ export default function LoginPage() {
             )}
           </div>
           
-          <div className="mb-6">
+          <div className="mb-6 relative">
             <label className="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2" htmlFor="password">
               Password
             </label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-              placeholder="••••••••"
-              required
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+                placeholder="••••••••"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
+            </div>
           </div>
           
           <button

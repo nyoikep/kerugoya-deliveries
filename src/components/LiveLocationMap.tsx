@@ -1,112 +1,89 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { GoogleMap, Marker, InfoWindow } from '@react-google-maps/api';
-import { useGoogleMaps } from '@/contexts/GoogleMapsContext';
+import { useEffect, useState, useMemo } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import { useSocket } from '@/contexts/SocketContext';
 
-const mapContainerStyle = {
-  width: '100%',
-  height: '100%'
-};
+// Fix for default marker icons in Leaflet with Next.js
+const DefaultIcon = L.icon({
+  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+});
 
-interface Location {
-  latitude: number;
-  longitude: number;
+const RiderIcon = L.icon({
+  iconUrl: 'https://cdn-icons-png.flaticon.com/512/3198/3198336.png',
+  iconSize: [35, 35],
+  iconAnchor: [17, 35],
+});
+
+const ClientIcon = L.icon({
+  iconUrl: 'https://cdn-icons-png.flaticon.com/512/1077/1077114.png',
+  iconSize: [30, 30],
+  iconAnchor: [15, 30],
+});
+
+L.Marker.prototype.options.icon = DefaultIcon;
+
+function RecenterMap({ center }: { center: [number, number] }) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView(center);
+  }, [center, map]);
+  return null;
 }
 
-interface LiveLocationMapProps {
-  clientLocation?: Location | null;
-  riderLocation?: Location | null;
-  pickupLocation?: Location | null;
-  destinationLocation?: Location | null;
-  center: Location;
-  zoom?: number;
-}
+export default function LiveLocationMap() {
+  const socket = useSocket();
+  const [locations, setLocations] = useState<any>({});
+  const center: [number, number] = [-0.505, 37.285]; // Kerugoya center
 
-const LiveLocationMap: React.FC<LiveLocationMapProps> = ({ 
-  clientLocation, 
-  riderLocation, 
-  pickupLocation,
-  destinationLocation,
-  center, 
-  zoom = 13 
-}) => {
-  const { isLoaded } = useGoogleMaps();
+  useEffect(() => {
+    if (!socket) return;
 
-  const [selectedMarker, setSelectedMarker] = useState<{ lat: number, lng: number, label: string } | null>(null);
+    socket.emit('joinAdminRoom');
 
-  const initialCenter = useMemo(() => ({
-    lat: center.latitude,
-    lng: center.longitude
-  }), [center]);
+    socket.on('admin_location_update', (data: any) => {
+      setLocations((prev: any) => ({
+        ...prev,
+        [`${data.type}_${data.deliveryId}`]: data
+      }));
+    });
 
-  if (!isLoaded) return <div className="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">Loading Map...</div>;
+    socket.on('rider_ping', (data: any) => {
+       // Optional: Add some visual alert for new pings
+       console.log("New delivery ping:", data);
+    });
+
+    return () => {
+      socket.off('admin_location_update');
+      socket.off('rider_ping');
+    };
+  }, [socket]);
 
   return (
-    <GoogleMap
-      mapContainerStyle={mapContainerStyle}
-      center={initialCenter}
-      zoom={zoom}
-      options={{
-        streetViewControl: false,
-        mapTypeControl: false,
-        fullscreenControl: true
-      }}
-    >
-      {clientLocation && (
+    <MapContainer center={center} zoom={14} style={{ height: '100%', width: '100%' }}>
+      <TileLayer
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      />
+      <RecenterMap center={center} />
+      
+      {Object.values(locations).map((loc: any) => (
         <Marker 
-          position={{ lat: clientLocation.latitude, lng: clientLocation.longitude }} 
-          onClick={() => setSelectedMarker({ 
-            lat: clientLocation.latitude, 
-            lng: clientLocation.longitude, 
-            label: "Client's Current Location" 
-          })}
-        />
-      )}
-      {riderLocation && (
-        <Marker 
-          position={{ lat: riderLocation.latitude, lng: riderLocation.longitude }} 
-          icon="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png"
-          onClick={() => setSelectedMarker({ 
-            lat: riderLocation.latitude, 
-            lng: riderLocation.longitude, 
-            label: "Rider's Location" 
-          })}
-        />
-      )}
-      {pickupLocation && (
-        <Marker 
-          position={{ lat: pickupLocation.latitude, lng: pickupLocation.longitude }} 
-          icon="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png"
-          onClick={() => setSelectedMarker({ 
-            lat: pickupLocation.latitude, 
-            lng: pickupLocation.longitude, 
-            label: "Pickup Location" 
-          })}
-        />
-      )}
-      {destinationLocation && (
-        <Marker 
-          position={{ lat: destinationLocation.latitude, lng: destinationLocation.longitude }} 
-          icon="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png"
-          onClick={() => setSelectedMarker({ 
-            lat: destinationLocation.latitude, 
-            lng: destinationLocation.longitude, 
-            label: "Destination Location" 
-          })}
-        />
-      )}
-
-      {selectedMarker && (
-        <InfoWindow
-          position={{ lat: selectedMarker.lat, lng: selectedMarker.lng }}
-          onCloseClick={() => setSelectedMarker(null)}
+          key={`${loc.type}_${loc.deliveryId}`} 
+          position={[loc.latitude, loc.longitude]}
+          icon={loc.type === 'RIDER' ? RiderIcon : ClientIcon}
         >
-          <div className="text-gray-900 font-medium">{selectedMarker.label}</div>
-        </InfoWindow>
-      )}
-    </GoogleMap>
+          <Popup>
+            <div className="font-bold">{loc.type} Update</div>
+            <div className="text-xs">Request ID: {loc.deliveryId}</div>
+          </Popup>
+        </Marker>
+      ))}
+    </MapContainer>
   );
-};
-
-export default LiveLocationMap;
+}

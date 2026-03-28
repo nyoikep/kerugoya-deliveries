@@ -32,23 +32,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
     }
 
-    // --- Shopper exclusivity logic ---
-    if (user.role === 'RIDER') {
-      return NextResponse.json({ message: 'Riders must log in through the rider portal.' }, { status: 403 });
-    }
-    // ---------------------------------
+    // Generate JWT Token
+    // Use fallback for development/demo safety
+    const jwtSecret = process.env.JWT_SECRET || 'kerugoya_fallback_secret_2026';
 
     const token = jwt.sign(
       { userId: user.id, role: user.role, email: user.email, phone: user.phone, name: user.name, idNumber: user.idNumber, motorcyclePlateNumber: user.motorcyclePlateNumber },
-      process.env.JWT_SECRET!,
+      jwtSecret,
       { expiresIn: '1d' },
     );
 
     const { password: _, ...userWithoutPassword } = user;
 
     return NextResponse.json({ user: userWithoutPassword, token }, { status: 200 });
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+  } catch (error: any) {
+    console.error('Login Error:', error);
+    return NextResponse.json({ message: `Server error: ${error.message || 'Internal server error'}` }, { status: 500 });
   }
 }

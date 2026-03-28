@@ -11,7 +11,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string, role: string };
+    const jwtSecret = process.env.JWT_SECRET || 'kerugoya_fallback_secret_2026';
+
+    const decoded = jwt.verify(token, jwtSecret) as { userId: string, role: string };
     if (!decoded || (decoded.role !== 'RIDER' && decoded.role !== 'ADMIN')) {
       return NextResponse.json({ message: 'Unauthorized access. Only riders can view available deliveries.' }, { status: 403 });
     }
@@ -36,7 +38,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(availableRequests, { status: 200 });
   } catch (error) {
-    console.error(error);
+    console.error('Available Deliveries API Error:', error);
     if (error instanceof jwt.JsonWebTokenError) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }

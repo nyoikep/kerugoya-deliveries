@@ -11,21 +11,32 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string, role: string };
     if (!decoded) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
+    let whereClause = {};
+    if (decoded.role === 'CLIENT') {
+      whereClause = { clientId: decoded.userId };
+    } else if (decoded.role === 'RIDER') {
+      whereClause = { riderId: decoded.userId };
+    } else if (decoded.role === 'ADMIN') {
+      whereClause = {}; // Admin sees all
+    }
+
     const deliveryRequests = await prisma.deliveryRequest.findMany({
-      where: { clientId: decoded.userId }, // Fetch only requests for the logged-in user
+      where: whereClause,
       include: {
         client: { select: { name: true, phone: true, email: true } },
+        rider: { select: { name: true, phone: true, motorcyclePlateNumber: true } },
         cartItems: {
           include: {
             product: true,
           },
         },
       },
+      orderBy: { createdAt: 'desc' }
     });
 
     return NextResponse.json(deliveryRequests, { status: 200 });
