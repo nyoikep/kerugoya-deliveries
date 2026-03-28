@@ -1,5 +1,6 @@
 import 'package:kerugoya_deliveries_mobile/services/api_service.dart';
 import 'package:kerugoya_deliveries_mobile/services/auth_provider.dart';
+import 'package:kerugoya_deliveries_mobile/services/socket_service.dart';
 import 'package:kerugoya_deliveries_mobile/models/delivery_request.dart';
 import 'package:kerugoya_deliveries_mobile/models/cart_item.dart';
 import 'package:kerugoya_deliveries_mobile/models/product.dart';
@@ -54,6 +55,7 @@ class DeliveryService {
     required String clientLocation,
     required String destination,
     String? riderId,
+    SocketService? socketService, // Optional socket service to emit ping
   }) async {
     try {
       final response = await ApiService.post(
@@ -71,10 +73,20 @@ class DeliveryService {
         },
         token: _authProvider.token,
       );
-      return DeliveryRequest.fromJson(response);
+      final delivery = DeliveryRequest.fromJson(response);
+      socketService?.socket?.emit('new_delivery_ping', {
+        'riderId': riderId ?? 'all',
+        'delivery': delivery.toJson(),
+      });
+      return delivery;
     } catch (e) {
       print('Error creating delivery, returning mock success: $e');
-      return _getMockClientDeliveries().first;
+      final mock = _getMockClientDeliveries().first;
+      socketService?.socket?.emit('new_delivery_ping', {
+        'riderId': riderId ?? 'all',
+        'delivery': mock.toJson(),
+      });
+      return mock;
     }
   }
 

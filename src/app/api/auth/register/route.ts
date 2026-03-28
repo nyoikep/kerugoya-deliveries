@@ -57,6 +57,7 @@ export async function POST(req: NextRequest) {
         name,
         role: role || 'CLIENT',
         idNumber: role === 'RIDER' ? idNumber : null,
+        idCardUrl: role === 'RIDER' ? idCardUrl : null, // Save ID card URL
         motorcyclePlateNumber: role === 'RIDER' ? motorcyclePlateNumber : null, // Save motorcyclePlateNumber
       },
     });

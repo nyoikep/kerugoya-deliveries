@@ -5,6 +5,7 @@ import 'package:kerugoya_deliveries_mobile/services/auth_provider.dart';
 import 'package:kerugoya_deliveries_mobile/services/cart_provider.dart';
 import 'package:kerugoya_deliveries_mobile/services/delivery_service.dart';
 import 'package:kerugoya_deliveries_mobile/services/rider_service.dart';
+import 'package:kerugoya_deliveries_mobile/services/socket_service.dart';
 import 'package:kerugoya_deliveries_mobile/screens/login_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:location/location.dart';
@@ -125,7 +126,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       final result = await Navigator.of(context).push(
         MaterialPageRoute(builder: (context) => const LoginScreen()),
       );
-      // If result is null, user just popped back without logging in
       if (!authProvider.isAuthenticated) return;
     }
 
@@ -134,18 +134,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     try {
       final cart = Provider.of<CartProvider>(context, listen: false);
       final deliveryService = Provider.of<DeliveryService>(context, listen: false);
+      final socketService = Provider.of<SocketService>(context, listen: false);
 
       await deliveryService.createDeliveryRequest(
         cartItems: cart.items.values.toList(),
         clientLocation: '${_pickupLocation!.latitude},${_pickupLocation!.longitude}',
         destination: '${_destinationLocation!.latitude},${_destinationLocation!.longitude}',
         riderId: _selectedRiderId,
+        socketService: socketService,
       );
 
       if (mounted) {
         cart.clearCart();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Delivery request created successfully!')),
+          const SnackBar(content: Text('Delivery request created successfully! Riders notified.')),
         );
         Navigator.of(context).popUntil((route) => route.isFirst);
       }

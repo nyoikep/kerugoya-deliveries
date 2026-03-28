@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:kerugoya_deliveries_mobile/screens/login_screen.dart';
 import 'package:kerugoya_deliveries_mobile/screens/main_screen.dart';
 import 'package:kerugoya_deliveries_mobile/screens/rider_main_screen.dart';
+import 'package:kerugoya_deliveries_mobile/screens/admin_main_screen.dart';
 import 'package:kerugoya_deliveries_mobile/services/auth_provider.dart';
 import 'package:kerugoya_deliveries_mobile/services/cart_provider.dart';
 import 'package:kerugoya_deliveries_mobile/services/socket_service.dart';
@@ -62,6 +63,8 @@ class MyApp extends StatelessWidget {
           // Navigate based on role
           if (auth.userRole == 'RIDER') {
             return const RiderMainScreen();
+          } else if (auth.userRole == 'ADMIN') {
+            return const AdminMainScreen();
           } else {
             return const MainScreen(userRole: 'CLIENT');
           }

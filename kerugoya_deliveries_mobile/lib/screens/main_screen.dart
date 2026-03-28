@@ -7,6 +7,7 @@ import 'package:kerugoya_deliveries_mobile/screens/profile_screen.dart';
 import 'package:kerugoya_deliveries_mobile/screens/delivery_tracking_screen.dart';
 import 'package:kerugoya_deliveries_mobile/screens/delivery_history_screen.dart';
 import 'package:kerugoya_deliveries_mobile/screens/login_screen.dart';
+import 'package:kerugoya_deliveries_mobile/screens/more_screen.dart';
 import 'package:kerugoya_deliveries_mobile/services/cart_provider.dart';
 
 class MainScreen extends StatefulWidget {
@@ -41,38 +42,24 @@ class _MainScreenState extends State<MainScreen> {
       ),
       const ShopScreen(),
       const CartScreen(),
-      widget.userRole == 'GUEST' ? _buildGuestAccessPrompt('Tracking') : const DeliveryTrackingScreen(),
-      widget.userRole == 'GUEST' ? _buildGuestAccessPrompt('History') : const DeliveryHistoryScreen(),
-      widget.userRole == 'GUEST' ? _buildGuestAccessPrompt('Profile') : const ProfileScreen(),
+      if (widget.userRole != 'GUEST') ...[
+        const DeliveryTrackingScreen(),
+        const DeliveryHistoryScreen(),
+      ],
+      MoreScreen(onNavigate: (index) {
+        setState(() {
+          _selectedIndex = index;
+        });
+      }),
     ];
   }
 
-  Widget _buildGuestAccessPrompt(String featureName) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.lock_outline, size: 64, color: Colors.grey[400]),
-          const SizedBox(height: 16),
-          Text(
-            'Please log in to view $featureName',
-            style: const TextStyle(fontSize: 18, color: Colors.grey),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
-              );
-            },
-            child: const Text('Go to Login'),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _onItemTapped(int index) {
+    if (widget.userRole == 'GUEST' && (index == 3 || index == 4)) {
+       // Should not happen with new logic but for safety
+       Navigator.of(context).push(MaterialPageRoute(builder: (context) => const LoginScreen()));
+       return;
+    }
     setState(() {
       _selectedIndex = index;
     });
@@ -115,20 +102,22 @@ class _MainScreenState extends State<MainScreen> {
               : const Icon(Icons.shopping_cart),
             label: 'Cart',
           ),
+          if (widget.userRole != 'GUEST') ...[
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.delivery_dining_outlined),
+              activeIcon: Icon(Icons.delivery_dining),
+              label: 'Tracking',
+            ),
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.history_outlined),
+              activeIcon: Icon(Icons.history),
+              label: 'History',
+            ),
+          ],
           const BottomNavigationBarItem(
-            icon: Icon(Icons.delivery_dining_outlined),
-            activeIcon: Icon(Icons.delivery_dining),
-            label: 'Tracking',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.history_outlined),
-            activeIcon: Icon(Icons.history),
-            label: 'History',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Profile',
+            icon: Icon(Icons.more_horiz_outlined),
+            activeIcon: Icon(Icons.more_horiz),
+            label: 'More',
           ),
         ],
         currentIndex: _selectedIndex,

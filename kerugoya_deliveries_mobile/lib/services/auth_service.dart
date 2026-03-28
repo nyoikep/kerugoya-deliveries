@@ -3,8 +3,6 @@ import 'dart:convert';
 
 class AuthService {
   // A helper to create a fake JWT-like token for mock mode
-  // The token just needs to be a base64 string that JwtDecoder can "decode"
-  // JWT format: header.payload.signature
   String _createMockToken(String role, String email) {
     final header = base64Url.encode(utf8.encode(json.encode({"alg": "HS256", "typ": "JWT"})));
     final payload = base64Url.encode(utf8.encode(json.encode({
@@ -29,10 +27,8 @@ class AuthService {
       throw HttpException(message: 'Login successful but no token received', statusCode: 200);
     } catch (e) {
       print('Login error, using mock login: $e');
-      // Special case: if user types "rider@test.com", log in as rider
-      if (email.contains('rider')) {
-        return _createMockToken('RIDER', email);
-      }
+      if (email.contains('admin')) return _createMockToken('ADMIN', email);
+      if (email.contains('rider')) return _createMockToken('RIDER', email);
       return _createMockToken('CLIENT', email);
     }
   }
@@ -58,7 +54,7 @@ class AuthService {
   }
 
   // Specific method for rider registration
-  Future<String> registerRider(String name, String email, String phone, String idNumber, String motorcyclePlateNumber, String password) async {
+  Future<String> registerRider(String name, String email, String phone, String idNumber, String motorcyclePlateNumber, String password, {String? idCardUrl}) async {
     try {
       final response = await ApiService.post('auth/register', {
         'name': name,
@@ -67,6 +63,7 @@ class AuthService {
         'idNumber': idNumber,
         'motorcyclePlateNumber': motorcyclePlateNumber,
         'password': password,
+        'idCardUrl': idCardUrl,
         'role': 'RIDER',
       });
       if (response.containsKey('token')) {

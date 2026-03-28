@@ -59,6 +59,14 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
+  bool _checkAuth() {
+    if (widget.userRole == 'GUEST') {
+      Navigator.of(context).push(MaterialPageRoute(builder: (context) => const LoginScreen()));
+      return false;
+    }
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -68,11 +76,111 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             _buildHeroSection(),
             _buildQuickActions(),
+            _buildShopCategories(),
             _buildFeaturedSection(),
             _buildPromotions(),
+            _buildFooter(),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildShopCategories() {
+    final categories = ['All', 'Food', 'Grocery', 'Pharmacy', 'Hardware', 'Wine & Spirit'];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          child: Text('Shop by Category', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        ),
+        SizedBox(
+          height: 100,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: categories.length,
+            itemBuilder: (context, index) {
+              final cat = categories[index];
+              return InkWell(
+                onTap: () {
+                  if (_checkAuth()) {
+                    widget.onNavigate?.call(1);
+                  }
+                },
+                child: Container(
+                  width: 80,
+                  margin: const EdgeInsets.only(right: 12),
+                  child: Column(
+                    children: [
+                      CircleAvatar(
+                        radius: 30,
+                        backgroundColor: Colors.grey[100],
+                        child: Icon(_getCategoryIcon(cat), color: Colors.black, size: 24),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(cat, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500), textAlign: TextAlign.center, maxLines: 1),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  IconData _getCategoryIcon(String category) {
+    switch (category) {
+      case 'Food': return Icons.restaurant;
+      case 'Grocery': return Icons.shopping_basket;
+      case 'Pharmacy': return Icons.local_pharmacy;
+      case 'Hardware': return Icons.build;
+      case 'Wine & Spirit': return Icons.wine_bar;
+      default: return Icons.category;
+    }
+  }
+
+  Widget _buildFooter() {
+    return Container(
+      padding: const EdgeInsets.all(40),
+      color: Colors.grey[50],
+      width: double.infinity,
+      child: Column(
+        children: [
+          Image.asset('assets/logo.jpg', height: 40, opacity: const AlwaysStoppedAnimation(0.5)),
+          const SizedBox(height: 20),
+          Text(
+            '© 2026 Kerugoya Deliveries. All rights reserved.',
+            style: TextStyle(color: Colors.grey[600], fontSize: 12),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            'Designed and developed by Peter Maina.',
+            style: TextStyle(color: Colors.grey[500], fontSize: 11),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildFooterLink('Terms'),
+              const Text(' • ', style: TextStyle(color: Colors.grey)),
+              _buildFooterLink('Privacy'),
+              const Text(' • ', style: TextStyle(color: Colors.grey)),
+              _buildFooterLink('Contact'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFooterLink(String text) {
+    return Text(
+      text,
+      style: TextStyle(color: Colors.grey[600], fontSize: 12, fontWeight: FontWeight.bold),
     );
   }
 
@@ -126,7 +234,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     Expanded(
                       child: InkWell(
-                        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const CheckoutScreen())),
+                        onTap: () {
+                          if (_checkAuth()) {
+                            Navigator.of(context).push(MaterialPageRoute(builder: (context) => const CheckoutScreen()));
+                          }
+                        },
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 15),
                           decoration: BoxDecoration(
@@ -141,7 +253,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     Expanded(
                       child: InkWell(
                         onTap: () {
-                           if (widget.onNavigate != null) widget.onNavigate!(1);
+                          if (_checkAuth()) {
+                            if (widget.onNavigate != null) widget.onNavigate!(1);
+                          }
                         },
                         child: const Center(child: Text('Order Delivery', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold))),
                       ),
@@ -166,6 +280,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       icon: const Icon(Icons.person_outline, color: Colors.black),
                       onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const LoginScreen())),
                     ),
+                  )
+                else
+                  IconButton(
+                    icon: const Icon(Icons.logout, color: Colors.white),
+                    onPressed: () => Provider.of<AuthProvider>(context, listen: false).logout(),
                   ),
               ],
             ),
@@ -189,7 +308,7 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildActionItem(Icons.bike_scooter, 'Ride', Colors.green[50]!, Colors.green, 0),
               _buildActionItem(Icons.restaurant, 'Food', Colors.orange[50]!, Colors.orange, 1),
               _buildActionItem(Icons.shopping_basket, 'Grocery', Colors.blue[50]!, Colors.blue, 1),
-              _buildActionItem(Icons.more_horiz, 'More', Colors.grey[100]!, Colors.black54, 1),
+              _buildActionItem(Icons.more_horiz, 'More', Colors.grey[100]!, Colors.black54, 5),
             ],
           ),
         ],
@@ -200,10 +319,12 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildActionItem(IconData icon, String label, Color bg, Color iconColor, int targetTab) {
     return InkWell(
       onTap: () {
-        if (targetTab == 0) {
-           Navigator.of(context).push(MaterialPageRoute(builder: (context) => const CheckoutScreen()));
-        } else {
-           if (widget.onNavigate != null) widget.onNavigate!(targetTab);
+        if (_checkAuth()) {
+          if (targetTab == 0) {
+            Navigator.of(context).push(MaterialPageRoute(builder: (context) => const CheckoutScreen()));
+          } else {
+            if (widget.onNavigate != null) widget.onNavigate!(targetTab);
+          }
         }
       },
       child: Column(
@@ -240,7 +361,9 @@ class _HomeScreenState extends State<HomeScreen> {
               final b = _featuredBusinesses[index];
               return InkWell(
                 onTap: () {
-                  if (widget.onNavigate != null) widget.onNavigate!(1);
+                  if (_checkAuth()) {
+                    if (widget.onNavigate != null) widget.onNavigate!(1);
+                  }
                 },
                 child: Container(
                   width: 280,
@@ -293,7 +416,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black),
                   onPressed: () {
-                     if (widget.onNavigate != null) widget.onNavigate!(1);
+                    if (_checkAuth()) {
+                      if (widget.onNavigate != null) widget.onNavigate!(1);
+                    }
                   },
                   child: const Text('Claim Now'),
                 ),

@@ -29,10 +29,17 @@ app.prepare().then(() => {
       console.log(`User ${socket.id} joined room ${deliveryId}`);
     });
 
+    socket.on('joinAdminRoom', () => {
+      socket.join('admin_room');
+      console.log(`Admin ${socket.id} joined admin_room`);
+    });
+
     socket.on('client_location_update', (data) => {
       const { deliveryId, latitude, longitude } = data;
       if (deliveryId) {
         socket.to(deliveryId).emit('client_location_broadcast', { deliveryId, latitude, longitude });
+        // Also broadcast to admins
+        socket.to('admin_room').emit('admin_location_update', { ...data, type: 'CLIENT' });
       }
     });
 
@@ -40,7 +47,16 @@ app.prepare().then(() => {
       const { deliveryId, latitude, longitude } = data;
       if (deliveryId) {
         socket.to(deliveryId).emit('rider_location_broadcast', { deliveryId, latitude, longitude });
+        // Also broadcast to admins
+        socket.to('admin_room').emit('admin_location_update', { ...data, type: 'RIDER' });
       }
+    });
+
+    // New event for instant pings to riders
+    socket.on('new_delivery_ping', (data) => {
+      const { riderId, delivery } = data;
+      // Broadcast to all (riders listen for their ID or 'all' if pending)
+      socket.broadcast.emit('rider_ping', { riderId, delivery });
     });
 
     socket.on('disconnect', () => {

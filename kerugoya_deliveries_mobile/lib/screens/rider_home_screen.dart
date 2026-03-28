@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:kerugoya_deliveries_mobile/services/delivery_service.dart';
 import 'package:kerugoya_deliveries_mobile/models/delivery_request.dart';
-import 'package:kerugoya_deliveries_mobile/services/api_service.dart'; // For HttpException
+import 'package:kerugoya_deliveries_mobile/services/api_service.dart'; 
+import 'package:kerugoya_deliveries_mobile/services/socket_service.dart';
 
 class RiderHomeScreen extends StatefulWidget {
   const RiderHomeScreen({super.key});
@@ -20,6 +21,24 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
   void initState() {
     super.initState();
     _fetchAvailableDeliveries();
+    _setupSocketListener();
+  }
+
+  void _setupSocketListener() {
+    final socketService = Provider.of<SocketService>(context, listen: false);
+    socketService.connectSocket();
+    socketService.socket?.on('rider_ping', (data) {
+       if (mounted) {
+         _fetchAvailableDeliveries();
+         ScaffoldMessenger.of(context).showSnackBar(
+           const SnackBar(
+             content: Text('New Delivery Request Available!', style: TextStyle(fontWeight: FontWeight.bold)),
+             backgroundColor: Colors.green,
+             behavior: SnackBarBehavior.floating,
+           ),
+         );
+       }
+    });
   }
 
   Future<void> _fetchAvailableDeliveries() async {
@@ -48,7 +67,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
   }
 
   Future<void> _handleAccept(String deliveryId) async {
-    setState(() { _isLoading = true; }); // Show loading for accept action
+    setState(() { _isLoading = true; }); 
     try {
       final deliveryService = Provider.of<DeliveryService>(context, listen: false);
       await deliveryService.acceptDeliveryRequest(deliveryId);
@@ -56,7 +75,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Delivery accepted!')),
       );
-      _fetchAvailableDeliveries(); // Refresh list
+      _fetchAvailableDeliveries(); 
     } on HttpException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -74,7 +93,6 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
     }
   }
 
-  // Placeholder for decline logic (might just remove from list, or update status on backend)
   void _handleDecline(String deliveryId) {
     setState(() {
       _availableDeliveries.removeWhere((d) => d.id == deliveryId);
@@ -82,7 +100,6 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Delivery declined (local update).')),
     );
-    // In a real app, you might send a decline status to the backend.
   }
 
   @override

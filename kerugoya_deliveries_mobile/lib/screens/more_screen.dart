@@ -22,13 +22,15 @@ class MoreScreen extends StatelessWidget {
       ),
       body: ListView(
         children: [
-          _buildSectionHeader('Services'),
-          _buildListTile(Icons.storefront, 'Shop Products', () {
-            if (onNavigate != null) onNavigate!(1);
-          }),
-          _buildListTile(Icons.delivery_dining, 'Order Delivery / Request a Ride', () {
-             if (onNavigate != null) onNavigate!(0); // Home then they can request a ride
-          }),
+          if (isLoggedIn) ...[
+            _buildSectionHeader('Services'),
+            _buildListTile(Icons.storefront, 'Shop Products', () {
+              if (onNavigate != null) onNavigate!(1);
+            }),
+            _buildListTile(Icons.delivery_dining, 'Order Delivery / Request a Ride', () {
+               if (onNavigate != null) onNavigate!(0); // Home then they can request a ride
+            }),
+          ],
 
           _buildSectionHeader('Support & Info'),
           _buildListTile(Icons.info_outline, 'About Kerugoya Deliveries', () {
@@ -40,40 +42,26 @@ class MoreScreen extends StatelessWidget {
           _buildListTile(Icons.description_outlined, 'Terms of Service', () {}),
           _buildListTile(Icons.privacy_tip_outlined, 'Privacy Policy', () {}),
           
-          _buildSectionHeader('Copyright Information'),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  '© 2026 Kerugoya Deliveries. All rights reserved.',
-                  style: TextStyle(color: Colors.black87, fontSize: 14, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Designed and developed by Peter Maina.',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 13),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Kerugoya Connect aims to be the leading platform for urban mobility and logistics in Kerugoya, Kenya. We provide a seamless, intuitive, and efficient solution for ride-hailing and on-demand delivery services.',
-                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-
           if (isLoggedIn) ...[
             _buildSectionHeader('Account'),
             _buildListTile(Icons.logout, 'Log Out', () {
               auth.logout();
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
-                (route) => false,
-              );
             }, color: Colors.red),
+          ] else ...[
+            _buildSectionHeader('Account'),
+            _buildListTile(Icons.login, 'Log In', () {
+              Navigator.of(context).push(MaterialPageRoute(builder: (context) => const LoginScreen()));
+            }, color: Colors.black),
           ],
+          
+          const SizedBox(height: 40),
+          Center(
+            child: Text(
+              'v1.0.0 (v2.3)',
+              style: TextStyle(color: Colors.grey[400], fontSize: 10),
+            ),
+          ),
+          const SizedBox(height: 20),
         ],
       ),
     );

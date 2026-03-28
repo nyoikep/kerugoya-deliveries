@@ -1,22 +1,24 @@
 // src/components/NavBar.tsx
 'use client';
 
-import { useState, useEffect } from 'react'; // Import useState and useEffect
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import { useCartContext } from '@/contexts/CartContext';
-import { Menu, X, ShoppingCart, Bike } from 'lucide-react'; // Import Menu, X and Bike icons
+import { Menu, X, ShoppingCart, Bike, ShieldCheck } from 'lucide-react';
 
 export default function NavBar() {
   const { cartItems } = useCartContext();
   const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false); // State for mobile menu
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     const fetchUserRole = async () => {
       const token = localStorage.getItem('token');
       if (token) {
+        setIsLoggedIn(true);
         try {
           const res = await fetch('/api/user', {
             headers: {
@@ -30,11 +32,22 @@ export default function NavBar() {
         } catch (error) {
           console.error('Error fetching user role:', error);
         }
+      } else {
+        setIsLoggedIn(false);
+        setUserRole(null);
       }
     };
 
     fetchUserRole();
+    // Listen for storage changes to update UI across tabs if needed
+    window.addEventListener('storage', fetchUserRole);
+    return () => window.removeEventListener('storage', fetchUserRole);
   }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    window.location.href = '/';
+  };
 
   return (
     <nav className="bg-white dark:bg-gray-800 shadow-lg p-4 relative z-50">
@@ -61,6 +74,12 @@ export default function NavBar() {
             </Link>
           )}
 
+          {userRole === 'ADMIN' && (
+            <Link href="/admin" className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition duration-300 font-bold flex items-center">
+              <ShieldCheck className="h-5 w-5 mr-1" /> Admin Panel
+            </Link>
+          )}
+
           <Link href="/cart" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition duration-300 font-medium relative flex items-center">
             <ShoppingCart className="h-5 w-5" />
             {itemCount > 0 && (
@@ -70,9 +89,15 @@ export default function NavBar() {
             )}
           </Link>
           <ThemeSwitcher />
-          <Link href="/login" className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition duration-300">
-            Login
-          </Link>
+          {isLoggedIn ? (
+            <button onClick={handleLogout} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-semibold rounded-md hover:bg-gray-300 transition duration-300">
+              Logout
+            </button>
+          ) : (
+            <Link href="/login" className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition duration-300">
+              Login
+            </Link>
+          )}
         </div>
 
         {/* Mobile Hamburger/Close Button */}
@@ -112,13 +137,24 @@ export default function NavBar() {
               </Link>
             )}
 
-            <Link href="/login" className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition duration-300" onClick={() => setMobileMenuOpen(false)}>
-              Login
-            </Link>
+            {userRole === 'ADMIN' && (
+              <Link href="/admin" className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition duration-300 font-bold flex items-center" onClick={() => setMobileMenuOpen(false)}>
+                <ShieldCheck className="h-5 w-5 mr-1" /> Admin Panel
+              </Link>
+            )}
+
+            {isLoggedIn ? (
+              <button onClick={handleLogout} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-semibold rounded-md hover:bg-gray-300 transition duration-300 w-3/4">
+                Logout
+              </button>
+            ) : (
+              <Link href="/login" className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition duration-300 w-3/4 text-center" onClick={() => setMobileMenuOpen(false)}>
+                Login
+              </Link>
+            )}
           </div>
         </div>
       )}
     </nav>
   );
 }
-
