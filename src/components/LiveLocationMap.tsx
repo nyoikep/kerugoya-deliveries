@@ -26,6 +26,18 @@ const ClientIcon = L.icon({
   iconAnchor: [15, 30],
 });
 
+const PickupIcon = L.icon({
+  iconUrl: 'https://cdn-icons-png.flaticon.com/512/1673/1673188.png',
+  iconSize: [30, 30],
+  iconAnchor: [15, 30],
+});
+
+const DestinationIcon = L.icon({
+  iconUrl: 'https://cdn-icons-png.flaticon.com/512/149/149060.png',
+  iconSize: [30, 30],
+  iconAnchor: [15, 30],
+});
+
 L.Marker.prototype.options.icon = DefaultIcon;
 
 function RecenterMap({ center }: { center: [number, number] }) {
@@ -36,10 +48,36 @@ function RecenterMap({ center }: { center: [number, number] }) {
   return null;
 }
 
-export default function LiveLocationMap() {
-  const socket = useSocket();
+interface Location {
+  latitude: number;
+  longitude: number;
+}
+
+interface LiveLocationMapProps {
+  clientLocation?: Location | null;
+  riderLocation?: Location | null;
+  pickupLocation?: Location | null;
+  destinationLocation?: Location | null;
+  center?: Location | null;
+}
+
+export default function LiveLocationMap({
+  clientLocation,
+  riderLocation,
+  pickupLocation,
+  destinationLocation,
+  center: propCenter
+}: LiveLocationMapProps) {
+  const { socket } = useSocket();
   const [locations, setLocations] = useState<any>({});
-  const center: [number, number] = [-0.505, 37.285]; // Kerugoya center
+  const defaultCenter: [number, number] = [-0.505, 37.285]; // Kerugoya center
+  
+  const center: [number, number] = useMemo(() => {
+    if (propCenter) return [propCenter.latitude, propCenter.longitude];
+    if (riderLocation) return [riderLocation.latitude, riderLocation.longitude];
+    if (clientLocation) return [clientLocation.latitude, clientLocation.longitude];
+    return defaultCenter;
+  }, [propCenter, riderLocation, clientLocation]);
 
   useEffect(() => {
     if (!socket) return;
@@ -54,7 +92,6 @@ export default function LiveLocationMap() {
     });
 
     socket.on('rider_ping', (data: any) => {
-       // Optional: Add some visual alert for new pings
        console.log("New delivery ping:", data);
     });
 
@@ -64,6 +101,8 @@ export default function LiveLocationMap() {
     };
   }, [socket]);
 
+  const hasProps = clientLocation || riderLocation || pickupLocation || destinationLocation;
+
   return (
     <MapContainer center={center} zoom={14} style={{ height: '100%', width: '100%' }}>
       <TileLayer
@@ -72,18 +111,43 @@ export default function LiveLocationMap() {
       />
       <RecenterMap center={center} />
       
-      {Object.values(locations).map((loc: any) => (
-        <Marker 
-          key={`${loc.type}_${loc.deliveryId}`} 
-          position={[loc.latitude, loc.longitude]}
-          icon={loc.type === 'RIDER' ? RiderIcon : ClientIcon}
-        >
-          <Popup>
-            <div className="font-bold">{loc.type} Update</div>
-            <div className="text-xs">Request ID: {loc.deliveryId}</div>
-          </Popup>
-        </Marker>
-      ))}
+      {hasProps ? (
+        <>
+          {clientLocation && (
+            <Marker position={[clientLocation.latitude, clientLocation.longitude]} icon={ClientIcon}>
+              <Popup>Client Location</Popup>
+            </Marker>
+          )}
+          {riderLocation && (
+            <Marker position={[riderLocation.latitude, riderLocation.longitude]} icon={RiderIcon}>
+              <Popup>Rider Location</Popup>
+            </Marker>
+          )}
+          {pickupLocation && (
+            <Marker position={[pickupLocation.latitude, pickupLocation.longitude]} icon={PickupIcon}>
+              <Popup>Pickup Point</Popup>
+            </Marker>
+          )}
+          {destinationLocation && (
+            <Marker position={[destinationLocation.latitude, destinationLocation.longitude]} icon={DestinationIcon}>
+              <Popup>Destination</Popup>
+            </Marker>
+          )}
+        </>
+      ) : (
+        Object.values(locations).map((loc: any) => (
+          <Marker 
+            key={`${loc.type}_${loc.deliveryId}`} 
+            position={[loc.latitude, loc.longitude]}
+            icon={loc.type === 'RIDER' ? RiderIcon : ClientIcon}
+          >
+            <Popup>
+              <div className="font-bold">{loc.type} Update</div>
+              <div className="text-xs">Request ID: {loc.deliveryId}</div>
+            </Popup>
+          </Marker>
+        ))
+      )}
     </MapContainer>
   );
 }
