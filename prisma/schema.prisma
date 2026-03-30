@@ -33,6 +33,8 @@ model User {
   ratingsAsRider     Rating[]          @relation("RiderRatings")
   ratingsAsClient    Rating[]          @relation("ClientRatings")
   mpesaTransactions  MpesaTransaction[] // Relation to MpesaTransaction
+
+  @@map("User")
 }
 
 model DeliveryRequest {

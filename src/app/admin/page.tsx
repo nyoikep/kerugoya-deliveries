@@ -109,15 +109,8 @@ export default function AdminPage() {
     </div>
   );
 
-  if (error) return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
-      <AlertCircle className="h-16 w-16 text-red-500 mb-4" />
-      <h2 className="text-xl font-bold dark:text-white mb-2">{error}</h2>
-      <button onClick={() => window.location.reload()} className="px-4 py-2 bg-blue-600 text-white rounded-md">Retry</button>
-    </div>
-  );
-
-  if (!user) return null;
+  // Stop rendering the dashboard if not an admin
+  if (!user || user.role !== 'ADMIN') return null;
 
   const activeDeliveries = deliveries.filter(d => d.status !== 'DELIVERED' && d.status !== 'CANCELLED');
 
