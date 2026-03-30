@@ -22,7 +22,8 @@ export default function AdminPage() {
     const checkAdmin = async () => {
       const token = localStorage.getItem('token');
       if (!token) {
-        window.location.href = '/login';
+        console.log('No token found, redirecting to login');
+        router.push('/login');
         return;
       }
 
@@ -33,13 +34,15 @@ export default function AdminPage() {
         if (res.ok) {
           const data = await res.json();
           if (data.role !== 'ADMIN') {
-            window.location.href = '/'; 
+             console.log('User is not an admin, redirecting to home');
+             router.push('/'); 
           } else {
             setUser(data);
             fetchData(token);
           }
         } else {
-          window.location.href = '/login';
+          console.log('Token verification failed, redirecting to login');
+          router.push('/login');
         }
       } catch (error) {
         console.error('Admin check failed:', error);
