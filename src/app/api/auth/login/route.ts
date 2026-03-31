@@ -13,7 +13,12 @@ export async function POST(req: NextRequest) {
 
     let user;
     try {
+      console.log(`[LOGIN DEBUG] Connecting to Prisma...`);
+      await prisma.$connect();
+      
       console.log(`[LOGIN DEBUG] Attempting login for email: ${email} or phone: ${phone}`);
+      console.log(`[LOGIN DEBUG] DATABASE_URL present: ${!!process.env.DATABASE_URL}`);
+      
       if (email) {
         user = await prisma.user.findUnique({
           where: { email },
@@ -25,8 +30,16 @@ export async function POST(req: NextRequest) {
       }
       console.log(`[LOGIN DEBUG] User found: ${user ? 'Yes' : 'No'}`);
     } catch (prismaError: any) {
-      console.error('[LOGIN DEBUG] Prisma Query Error:', prismaError);
-      throw prismaError;
+      console.error('[LOGIN DEBUG] CRITICAL PRISMA ERROR:', {
+        message: prismaError.message,
+        code: prismaError.code,
+        meta: prismaError.meta,
+        stack: prismaError.stack
+      });
+      return NextResponse.json({ 
+        message: `Database error: ${prismaError.message}`,
+        details: prismaError.meta
+      }, { status: 500 });
     }
 
     if (!user) {
