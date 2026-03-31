@@ -4,10 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "node server.js",
-    "build": "prisma generate && prisma migrate deploy && next build",
+    "build": "prisma generate && next build",
     "postinstall": "prisma generate",
-    "start": "NODE_ENV=production node server.js",
-    "lint": "eslint",
+    "start": "prisma migrate deploy && NODE_ENV=production node server.js",
+    "lint": "next lint",
     "prisma:seed": "ts-node --project prisma/tsconfig.json prisma/seed.ts"
   },
   "prisma": {
@@ -45,7 +45,7 @@
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^10.0.1",
-    "eslint-config-next": "^0.2.4",
+    "eslint-config-next": "^15.1.0",
     "prisma": "^7.4.1",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
