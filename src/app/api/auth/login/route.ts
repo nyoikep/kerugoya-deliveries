@@ -12,14 +12,21 @@ export async function POST(req: NextRequest) {
     }
 
     let user;
-    if (email) {
-      user = await prisma.user.findUnique({
-        where: { email },
-      });
-    } else if (phone) {
-      user = await prisma.user.findUnique({
-        where: { phone },
-      });
+    try {
+      console.log(`[LOGIN DEBUG] Attempting login for email: ${email} or phone: ${phone}`);
+      if (email) {
+        user = await prisma.user.findUnique({
+          where: { email },
+        });
+      } else if (phone) {
+        user = await prisma.user.findUnique({
+          where: { phone },
+        });
+      }
+      console.log(`[LOGIN DEBUG] User found: ${user ? 'Yes' : 'No'}`);
+    } catch (prismaError: any) {
+      console.error('[LOGIN DEBUG] Prisma Query Error:', prismaError);
+      throw prismaError;
     }
 
     if (!user) {
