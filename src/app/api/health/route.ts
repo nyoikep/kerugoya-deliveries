@@ -4,10 +4,12 @@ import prisma from '@/lib/prisma';
 export async function GET() {
   try {
     const userCount = await prisma.user.count();
+    const dbUrl = process.env.DATABASE_URL || 'not set (using fallback)';
     return NextResponse.json({
       status: 'ok',
       timestamp: new Date().toISOString(),
       database: 'connected',
+      dbUrl: dbUrl.replace(/:.*@/, ':***@'), // Mask credentials if any
       userCount,
       message: 'If you see this, the server is running the latest code with @@map("User") support.'
     });
