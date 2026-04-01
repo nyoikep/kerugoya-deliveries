@@ -3,6 +3,7 @@ import 'package:kerugoya_deliveries_mobile/services/auth_service.dart';
 import 'package:kerugoya_deliveries_mobile/services/api_service.dart';
 import 'package:provider/provider.dart';
 import 'package:kerugoya_deliveries_mobile/services/auth_provider.dart';
+import 'package:image_picker/image_picker.dart';
 
 class RegisterRiderScreen extends StatefulWidget {
   const RegisterRiderScreen({super.key});
@@ -20,8 +21,10 @@ class _RegisterRiderScreenState extends State<RegisterRiderScreen> {
   final _motorcyclePlateNumberController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
-  String? _idCardPlaceholder;
+  String? _idCardPath;
+  String? _idCardName;
   bool _obscurePassword = true;
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void dispose() {
@@ -34,13 +37,33 @@ class _RegisterRiderScreenState extends State<RegisterRiderScreen> {
     super.dispose();
   }
 
-  void _pickIdCard() {
-    setState(() {
-      _idCardPlaceholder = "id_card_sample.jpg"; 
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('ID/Passport selected (Simulation)')),
-    );
+  Future<void> _pickIdCard() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1000,
+        maxHeight: 1000,
+        imageQuality: 85,
+      );
+      
+      if (image != null) {
+        setState(() {
+          _idCardPath = image.path;
+          _idCardName = image.name;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Selected: ${image.name}')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error selecting image')),
+        );
+      }
+    }
   }
 
   Future<void> _register() async {
@@ -48,7 +71,7 @@ class _RegisterRiderScreenState extends State<RegisterRiderScreen> {
       return;
     }
 
-    if (_idCardPlaceholder == null) {
+    if (_idCardPath == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please upload your ID/Passport card')),
       );
@@ -67,7 +90,7 @@ class _RegisterRiderScreenState extends State<RegisterRiderScreen> {
         _idNumberController.text,
         _motorcyclePlateNumberController.text,
         _passwordController.text,
-        idCardUrl: _idCardPlaceholder,
+        idCardUrl: _idCardName, // In a real app, you would upload the file at _idCardPath to a storage service
       );
       if (mounted) {
         Provider.of<AuthProvider>(context, listen: false).saveToken(token);
@@ -148,7 +171,7 @@ class _RegisterRiderScreenState extends State<RegisterRiderScreen> {
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: Colors.grey[400]!),
                   ),
-                  child: _idCardPlaceholder == null
+                  child: _idCardName == null
                       ? const Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -162,7 +185,7 @@ class _RegisterRiderScreenState extends State<RegisterRiderScreen> {
                             children: [
                               const Icon(Icons.check_circle, color: Colors.green),
                               const SizedBox(width: 8),
-                              Text(_idCardPlaceholder!, style: const TextStyle(fontWeight: FontWeight.bold)),
+                              Text(_idCardName!, style: const TextStyle(fontWeight: FontWeight.bold)),
                             ],
                           ),
                         ),

@@ -25,6 +25,7 @@ dependencies:
   webview_flutter_wkwebview: ^3.16.3
   internet_connection_checker: ^3.0.1
   video_player: ^2.9.2
+  image_picker: ^1.2.1
 
 dev_dependencies:
   flutter_test:

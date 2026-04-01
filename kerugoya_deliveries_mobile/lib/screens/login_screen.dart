@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kerugoya_deliveries_mobile/screens/register_client_screen.dart';
 import 'package:kerugoya_deliveries_mobile/screens/register_rider_screen.dart';
+import 'package:kerugoya_deliveries_mobile/screens/forgot_password_screen.dart';
 import 'package:kerugoya_deliveries_mobile/services/auth_service.dart';
 import 'package:kerugoya_deliveries_mobile/services/api_service.dart';
 import 'package:provider/provider.dart';
@@ -128,6 +129,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 50), backgroundColor: Colors.black, foregroundColor: Colors.white),
                       child: const Text('Login'),
                     ),
+              
+              TextButton(
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ForgotPasswordScreen())),
+                child: const Text('Forgot Password?', style: TextStyle(color: Colors.blue)),
+              ),
               
               if (_showMockButtons) ...[
                 const SizedBox(height: 16),
