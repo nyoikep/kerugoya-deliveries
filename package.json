@@ -6,7 +6,7 @@
     "dev": "node server.js",
     "build": "prisma generate && next build",
     "postinstall": "prisma generate",
-    "start": "prisma migrate deploy && NODE_ENV=production node server.js",
+    "start": "prisma migrate deploy && FORCE_SEED=true npx tsx prisma/seed.ts && NODE_ENV=production node server.js",
     "lint": "next lint",
     "prisma:seed": "ts-node --project prisma/tsconfig.json prisma/seed.ts"
   },

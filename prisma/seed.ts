@@ -9,6 +9,12 @@ const adapter = new PrismaBetterSqlite3({
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
+  // Check if we should actually seed (useful for production safety)
+  if (process.env.NODE_ENV === 'production' && process.env.FORCE_SEED !== 'true') {
+    console.log('Skipping seed in production. Set FORCE_SEED=true to override.');
+    return;
+  }
+
   console.log('Start seeding ...');
 
   const hashedPassword = await bcrypt.hash('password123', 10);
