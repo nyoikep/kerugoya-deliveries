@@ -1,68 +1,102 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import { jwtVerify } from 'jose';
 
-export async function GET(req: NextRequest) {
+async function isAdmin(req: NextRequest) {
+  const authHeader = req.headers.get('authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return false;
+  
+  const token = authHeader.split(' ')[1];
   try {
-    const token = req.headers.get('authorization')?.split(' ')[1];
-    if (!token) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-
-    const jwtSecret = process.env.JWT_SECRET || 'kerugoya_fallback_secret_2026';
-    const decoded = jwt.verify(token, jwtSecret) as { role: string };
-    
-    if (decoded.role !== 'ADMIN') {
-      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
-    }
-
-    const users = await prisma.user.findMany({
-      where: {
-        role: { in: ['RIDER', 'CLIENT'] },
-        status: { in: ['PENDING', 'REJECTED'] }
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        phone: true,
-        role: true,
-        status: true,
-        idNumber: true,
-        motorcyclePlateNumber: true,
-        createdAt: true
-      }
-    });
-
-    return NextResponse.json(users);
-  } catch (error) {
-    return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
+    const { payload } = await jwtVerify(
+      token,
+      new TextEncoder().encode(process.env.JWT_SECRET || 'kerugoya_fallback_secret_2026')
+    );
+    return payload.role === 'ADMIN';
+  } catch (e) {
+    return false;
   }
 }
 
-export async function PATCH(req: NextRequest) {
+export async function GET(req: NextRequest) {
+  if (!(await isAdmin(req))) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
-    const token = req.headers.get('authorization')?.split(' ')[1];
-    if (!token) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    const users = await prisma.user.findMany({
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        email: true,
+        phone: true,
+        name: true,
+        role: true,
+        status: true,
+        createdAt: true,
+      }
+    });
+    return NextResponse.json(users);
+  } catch (error: any) {
+    return NextResponse.json({ message: error.message }, { status: 500 });
+  }
+}
 
-    const jwtSecret = process.env.JWT_SECRET || 'kerugoya_fallback_secret_2026';
-    const decoded = jwt.verify(token, jwtSecret) as { role: string };
+export async function POST(req: NextRequest) {
+  if (!(await isAdmin(req))) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const { email, phone, password, name, role } = await req.json();
     
-    if (decoded.role !== 'ADMIN') {
-      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
-    }
+    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedPhone = phone.replace(/\D/g, '').trim();
 
-    const { userId, status } = await req.json();
-
-    if (!userId || !status) {
-      return NextResponse.json({ message: 'Missing fields' }, { status: 400 });
-    }
-
-    const updatedUser = await prisma.user.update({
-      where: { id: userId },
-      data: { status }
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [{ email: normalizedEmail }, { phone: normalizedPhone }]
+      }
     });
 
-    return NextResponse.json(updatedUser);
-  } catch (error) {
-    return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
+    if (existingUser) {
+      return NextResponse.json({ message: 'User already exists' }, { status: 400 });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await prisma.user.create({
+      data: {
+        email: normalizedEmail,
+        phone: normalizedPhone,
+        password: hashedPassword,
+        name,
+        role: role || 'CLIENT',
+        status: 'APPROVED'
+      }
+    });
+
+    const { password: _, ...userWithoutPassword } = user;
+    return NextResponse.json(userWithoutPassword, { status: 201 });
+  } catch (error: any) {
+    return NextResponse.json({ message: error.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  if (!(await isAdmin(req))) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+
+    if (!id) return NextResponse.json({ message: 'User ID required' }, { status: 400 });
+
+    await prisma.user.delete({ where: { id } });
+    return NextResponse.json({ message: 'User deleted successfully' });
+  } catch (error: any) {
+    return NextResponse.json({ message: error.message }, { status: 500 });
   }
 }

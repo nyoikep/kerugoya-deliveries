@@ -24,7 +24,6 @@ export async function GET(req: NextRequest) {
         status: true,
         idNumber: true,
         motorcyclePlateNumber: true,
-        password: true, // This will be the hashed password
         createdAt: true
       },
       orderBy: {

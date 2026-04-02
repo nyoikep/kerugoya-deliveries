@@ -25,6 +25,8 @@ function NewDeliveryContent() {
   const [destinationLocation, setDestinationLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [availableRiders, setAvailableRiders] = useState<Rider[]>([]);
   const [selectedRiderId, setSelectedRiderId] = useState<string | null>(null);
+  const [scheduledAt, setScheduledAt] = useState<string | null>(null);
+  const [isScheduled, setIsScheduled] = useState(false);
   const [estimatedDistance, setEstimatedDistance] = useState<number | null>(null);
   const [estimatedPrice, setEstimatedPrice] = useState<number | null>(null);
   const [error, setError] = useState('');
@@ -33,8 +35,11 @@ function NewDeliveryContent() {
   const searchParams = useSearchParams();
   const { cartItems, clearCart, getTotalPrice, isHydrated } = useCart();
 
-  const initialPickup = searchParams.get('pickup');
-  const initialDestination = searchParams.get('destination');
+  useEffect(() => {
+    if (searchParams.get('scheduled') === 'true') {
+      setIsScheduled(true);
+    }
+  }, [searchParams]);
 
   // Pricing constants
   const BASE_FEE = 2.0;
@@ -89,6 +94,11 @@ function NewDeliveryContent() {
       return;
     }
 
+    if (isScheduled && !scheduledAt) {
+      setError('Please select a date and time for your scheduled ride.');
+      return;
+    }
+
     if (!selectedRiderId) {
       setError('Please select a rider.');
       return;
@@ -111,6 +121,7 @@ function NewDeliveryContent() {
         clientLocation: pickupLocation,
         destination: destinationLocation,
         riderId: selectedRiderId,
+        scheduledAt: isScheduled ? scheduledAt : null,
       }),
     });
 
@@ -155,193 +166,227 @@ function NewDeliveryContent() {
 
   const getStepTitle = () => {
     switch (step) {
-      case 'pickup': return 'Step 1: Confirm Pickup Location';
-      case 'destination': return 'Step 2: Confirm Destination Location';
-      case 'select-rider': return 'Step 3: Select a Rider';
+      case 'pickup': return 'Confirm Pickup Location';
+      case 'destination': return 'Confirm Destination Location';
+      case 'select-rider': return 'Select a Rider';
       default: return 'New Delivery Request';
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 flex items-center justify-center">
-      <div className="w-full max-w-4xl mx-auto bg-white dark:bg-gray-800 p-8 rounded-lg shadow-2xl">
-        <h2 className="text-3xl font-bold text-center mb-8 text-gray-900 dark:text-gray-100">
-          {getStepTitle()}
-        </h2>
-        {error && <p className="bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 p-3 rounded-md text-center mb-6">{error}</p>}
-        
-        {/* Cart Review - shown on all steps */}
-        <div className="mb-8 p-6 bg-gray-50 dark:bg-gray-700 rounded-lg shadow-inner">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-            <ShoppingCart className="h-6 w-6 mr-2 text-blue-500" /> Review Your Order
-          </h3>
-          {cartItems.length === 0 ? (
-            <p className="text-gray-600 dark:text-gray-400 text-center">
-              No items in cart. Please add items from the{' '}
-              <Link href="/shop" className="text-blue-600 hover:underline dark:text-blue-400">
-                Shop
-              </Link>
-              .
-            </p>
-          ) : (
-            <>
-              <ul className="divide-y divide-gray-200 dark:divide-gray-600 mb-4">
-                {cartItems.map((item) => (
-                  <li key={item.id} className="flex justify-between items-center py-3">
-                    <span className="text-gray-800 dark:text-gray-200 break-words pr-2">
-                      {item.name} (x{item.quantity})
-                    </span>
-                    <span className="font-semibold text-gray-900 dark:text-gray-100">
-                      ${(item.price * item.quantity).toFixed(2)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              <div className="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-600 font-bold text-lg">
-                <span className="text-gray-900 dark:text-gray-100">Total Cart Price:</span>
-                <span className="text-blue-600 dark:text-blue-400">${getTotalPrice().toFixed(2)}</span>
-              </div>
-            </>
-          )}
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 flex items-center justify-center font-sans">
+      <div className="w-full max-w-5xl mx-auto bg-white dark:bg-gray-800 p-8 rounded-[2rem] shadow-2xl border dark:border-gray-700">
+        <div className="flex justify-between items-center mb-10">
+           <h2 className="text-4xl font-black text-gray-900 dark:text-gray-100">
+             {getStepTitle()}
+           </h2>
+           <div className="flex items-center space-x-2 bg-gray-100 dark:bg-gray-700 p-1 rounded-xl">
+              <button 
+                type="button"
+                onClick={() => setIsScheduled(false)}
+                className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${!isScheduled ? 'bg-white dark:bg-gray-600 shadow-sm text-black dark:text-white' : 'text-gray-500'}`}
+              >
+                Now
+              </button>
+              <button 
+                type="button"
+                onClick={() => setIsScheduled(true)}
+                className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${isScheduled ? 'bg-white dark:bg-gray-600 shadow-sm text-black dark:text-white' : 'text-gray-500'}`}
+              >
+                Schedule
+              </button>
+           </div>
         </div>
 
-        {/* Trip Summary - shown when both locations are selected */}
-        {(pickupLocation && destinationLocation) && (
-          <div className="mb-8 p-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg shadow-sm">
-            <h3 className="text-xl font-bold text-blue-900 dark:text-blue-100 mb-4 flex items-center">
-              <Bike className="h-6 w-6 mr-2 text-blue-500" /> Trip Metering System
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-blue-700 dark:text-blue-300">Estimated Distance</p>
-                <p className="text-xl font-bold dark:text-white">
-                  {estimatedDistance ? `${estimatedDistance.toFixed(2)} km` : 'Calculating...'}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-blue-700 dark:text-blue-300">Estimated Trip Fee</p>
-                <p className="text-xl font-bold dark:text-white">
-                  {estimatedPrice ? `$${estimatedPrice.toFixed(2)}` : 'Calculating...'}
-                </p>
-              </div>
-            </div>
-            {estimatedPrice && (
-              <div className="mt-4 pt-4 border-t border-blue-200 dark:border-blue-700 flex justify-between items-center">
-                <span className="font-bold text-gray-900 dark:text-gray-100">Grand Total (Cart + Trip):</span>
-                <span className="text-2xl font-black text-blue-600 dark:text-blue-400">
-                  ${(getTotalPrice() + estimatedPrice).toFixed(2)}
-                </span>
-              </div>
-            )}
-            <p className="text-[10px] text-blue-600 dark:text-blue-400 mt-2 italic">
-              * Final price may vary based on actual route taken by rider.
-            </p>
-          </div>
-        )}
+        {error && <p className="bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 p-4 rounded-xl text-center mb-8 font-bold animate-shake">{error}</p>}
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+          <div className="lg:col-span-2">
+            <form onSubmit={step === 'select-rider' ? handleSubmit : handleNextStep}>
 
-        <form onSubmit={step === 'select-rider' ? handleSubmit : handleNextStep}>
-
-          {step === 'pickup' && (
-            <div className="mb-8">
-              <label className="block text-gray-700 dark:text-gray-300 font-semibold mb-3 flex items-center">
-                <MapPin className="h-5 w-5 mr-2 text-green-500" /> Select Your Pickup Location
-              </label>
-              <div className="h-96 w-full rounded-lg shadow-md overflow-hidden">
-                <NoSSR>
-                  <MapPicker 
-                    mode="pickup"
-                    otherLocation={destinationLocation ? { lat: destinationLocation.lat, lng: destinationLocation.lng } : null}
-                    onLocationSelect={setPickupLocation} 
-                    initialPickupSearch={initialPickup || undefined} 
-                  />
-                </NoSSR>
-              </div>
-            </div>
-          )}
-
-          {step === 'destination' && (
-            <div className="mb-8">
-              <label className="block text-gray-700 dark:text-gray-300 font-semibold mb-3 flex items-center">
-                <MapPin className="h-5 w-5 mr-2 text-orange-500" /> Select Your Destination Location
-              </label>
-              <div className="h-96 w-full rounded-lg shadow-md overflow-hidden">
-                <NoSSR>
-                  <MapPicker 
-                    mode="destination"
-                    otherLocation={pickupLocation ? { lat: pickupLocation.lat, lng: pickupLocation.lng } : null}
-                    onLocationSelect={setDestinationLocation} 
-                    initialDestinationSearch={initialDestination || undefined} 
-                  />
-                </NoSSR>
-              </div>
-            </div>
-          )}
-
-          {step === 'select-rider' && (
-            <div className="mb-8">
-              <label className="block text-gray-700 dark:text-gray-300 font-semibold mb-3 flex items-center">
-                <Bike className="h-6 w-6 mr-2 text-blue-500" /> Select an Available Rider
-              </label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {availableRiders.length > 0 ? (
-                  availableRiders.map((rider) => (
-                    <div
-                      key={rider.id}
-                      onClick={() => setSelectedRiderId(rider.id)}
-                      className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                        selectedRiderId === rider.id
-                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
-                          : 'border-gray-200 dark:border-gray-700 hover:border-blue-300'
-                      }`}
-                    >
-                      <h4 className="font-bold text-gray-900 dark:text-gray-100">{rider.name}</h4>
-                      <p className="text-gray-600 dark:text-gray-400 text-sm">{rider.phone}</p>
-                      {selectedRiderId === rider.id && (
-                        <p className="mt-2 text-blue-600 dark:text-blue-400 font-bold">
-                          Plate: {rider.motorcyclePlateNumber}
-                        </p>
-                      )}
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-gray-500 text-center col-span-2">No riders available in the area.</p>
-                )}
-              </div>
-              {availableRiders.find(r => r.id === selectedRiderId) && (
-                <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 rounded-lg text-center">
-                  <p className="text-green-800 dark:text-green-200 font-semibold">
-                    You have selected {availableRiders.find(r => r.id === selectedRiderId)?.name}.
-                  </p>
-                  <p className="text-2xl font-bold text-green-900 dark:text-green-100 mt-2">
-                    Plate: {availableRiders.find(r => r.id === selectedRiderId)?.motorcyclePlateNumber}
-                  </p>
+              {step === 'pickup' && (
+                <div className="mb-8">
+                  <div className="h-[500px] w-full rounded-3xl shadow-lg overflow-hidden border dark:border-gray-700">
+                    <NoSSR>
+                      <MapPicker 
+                        mode="pickup"
+                        otherLocation={destinationLocation ? { lat: destinationLocation.lat, lng: destinationLocation.lng } : null}
+                        onLocationSelect={setPickupLocation} 
+                        initialPickupSearch={initialPickup || undefined} 
+                      />
+                    </NoSSR>
+                  </div>
                 </div>
               )}
-            </div>
-          )}
 
-          <div className="flex justify-between mt-6">
-            {step !== 'pickup' && (
-              <button
-                type="button"
-                onClick={() => setStep(step === 'select-rider' ? 'destination' : 'pickup')}
-                className="px-6 py-3 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 font-bold rounded-lg shadow-md hover:bg-gray-400 dark:hover:bg-gray-700 transition duration-300"
-              >
-                Back
-              </button>
-            )}
-            <button
-              type="submit"
-              className={`px-8 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-lg hover:bg-blue-700 transition duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 ${
-                (step === 'select-rider' && !selectedRiderId) ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
-              disabled={step === 'select-rider' && !selectedRiderId}
-              style={{ marginLeft: step === 'pickup' ? '0' : 'auto' }}
-            >
-              {step === 'select-rider' ? 'Confirm Rider & Request Ride' : 'Next Step'}
-            </button>
+              {step === 'destination' && (
+                <div className="mb-8">
+                  <div className="h-[500px] w-full rounded-3xl shadow-lg overflow-hidden border dark:border-gray-700">
+                    <NoSSR>
+                      <MapPicker 
+                        mode="destination"
+                        otherLocation={pickupLocation ? { lat: pickupLocation.lat, lng: pickupLocation.lng } : null}
+                        onLocationSelect={setDestinationLocation} 
+                        initialDestinationSearch={initialDestination || undefined} 
+                      />
+                    </NoSSR>
+                  </div>
+                </div>
+              )}
+
+              {step === 'select-rider' && (
+                <div className="mb-8">
+                  {isScheduled && (
+                    <div className="mb-8 p-6 bg-blue-50 dark:bg-blue-900/20 rounded-2xl border border-blue-100 dark:border-blue-800">
+                      <label className="block text-sm font-black text-blue-900 dark:text-blue-100 uppercase mb-3 flex items-center">
+                        <Clock className="h-4 w-4 mr-2" /> Schedule Your Trip
+                      </label>
+                      <input 
+                        type="datetime-local" 
+                        required={isScheduled}
+                        value={scheduledAt || ''}
+                        onChange={(e) => setScheduledAt(e.target.value)}
+                        className="w-full px-4 py-4 bg-white dark:bg-gray-700 border-2 border-blue-200 dark:border-blue-800 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-bold"
+                      />
+                    </div>
+                  )}
+
+                  <label className="block text-xl font-black text-gray-900 dark:text-gray-100 mb-6 flex items-center">
+                    <Bike className="h-6 w-6 mr-2 text-blue-500" /> Choose your ride
+                  </label>
+                  <div className="space-y-4">
+                    {availableRiders.length > 0 ? (
+                      availableRiders.map((rider) => (
+                        <div
+                          key={rider.id}
+                          onClick={() => setSelectedRiderId(rider.id)}
+                          className={`p-6 border-2 rounded-2xl cursor-pointer transition-all flex items-center justify-between group ${
+                            selectedRiderId === rider.id
+                              ? 'border-black dark:border-blue-500 bg-gray-50 dark:bg-blue-900/30 ring-4 ring-black/5'
+                              : 'border-gray-100 dark:border-gray-700 hover:border-gray-300'
+                          }`}
+                        >
+                          <div className="flex items-center space-x-4">
+                             <div className="p-3 bg-gray-200 dark:bg-gray-700 rounded-xl group-hover:scale-110 transition-transform">
+                                <Bike className="h-8 w-8 text-black dark:text-white" />
+                             </div>
+                             <div>
+                                <h4 className="font-black text-xl text-gray-900 dark:text-gray-100">{rider.name}</h4>
+                                <p className="text-gray-500 dark:text-gray-400 text-sm font-bold">{rider.motorcyclePlateNumber}</p>
+                             </div>
+                          </div>
+                          <div className="text-right">
+                             <p className="font-black text-xl">${(getTotalPrice() + (estimatedPrice || 0)).toFixed(2)}</p>
+                             <p className="text-xs text-gray-400 font-bold">Estimated Total</p>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-12 text-center bg-gray-50 dark:bg-gray-700/50 rounded-3xl">
+                        <p className="text-gray-500 dark:text-gray-400 font-bold italic">Searching for nearby riders...</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-between mt-10">
+                {step !== 'pickup' ? (
+                  <button
+                    type="button"
+                    onClick={() => setStep(step === 'select-rider' ? 'destination' : 'pickup')}
+                    className="px-8 py-4 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-black rounded-2xl shadow-md hover:bg-gray-200 dark:hover:bg-gray-600 transition duration-300"
+                  >
+                    Back
+                  </button>
+                ) : <div />}
+                <button
+                  type="submit"
+                  className={`px-12 py-4 bg-black dark:bg-blue-600 text-white font-black text-lg rounded-2xl shadow-xl hover:scale-[1.05] active:scale-[0.95] transition duration-300 focus:outline-none ${
+                    (step === 'select-rider' && !selectedRiderId) ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                  disabled={step === 'select-rider' && !selectedRiderId}
+                >
+                  {step === 'select-rider' ? 'Book Kerugoya Ride' : 'Next Step'}
+                </button>
+              </div>
+            </form>
           </div>
-        </form>
+
+          <div className="lg:col-span-1 space-y-6">
+            {/* Trip Details Summary */}
+            <div className="p-8 bg-gray-900 text-white rounded-[2rem] shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-8 opacity-10">
+                 <Navigation className="h-32 w-32" />
+              </div>
+              <h3 className="text-2xl font-black mb-6 flex items-center relative z-10">
+                Trip Summary
+              </h3>
+              
+              <div className="space-y-6 relative z-10">
+                <div className="flex items-start space-x-4">
+                  <div className="mt-1 h-3 w-3 bg-white rounded-full flex-shrink-0"></div>
+                  <div>
+                    <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Pickup</p>
+                    <p className="font-bold truncate max-w-[180px]">{pickupLocation ? 'Location Selected' : 'Not set'}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-4">
+                  <div className="mt-1 h-3 w-3 bg-blue-500 rounded-sm flex-shrink-0"></div>
+                  <div>
+                    <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Destination</p>
+                    <p className="font-bold truncate max-w-[180px]">{destinationLocation ? 'Location Selected' : 'Not set'}</p>
+                  </div>
+                </div>
+
+                {estimatedDistance && (
+                  <div className="pt-6 border-t border-white/10 grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Distance</p>
+                      <p className="text-lg font-black">{estimatedDistance.toFixed(1)} km</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Est. Time</p>
+                      <p className="text-lg font-black">{Math.ceil(estimatedDistance * 3)} min</p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="pt-6 border-t border-white/10">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-gray-400 text-sm">Cart Total</span>
+                    <span className="font-bold">${getTotalPrice().toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="text-gray-400 text-sm">Ride Fare</span>
+                    <span className="font-bold">${(estimatedPrice || 0).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-end">
+                    <span className="text-white font-black text-lg">Total</span>
+                    <span className="text-3xl font-black text-blue-400">${(getTotalPrice() + (estimatedPrice || 0)).toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Cart Summary Card */}
+            <div className="p-6 bg-white dark:bg-gray-800 rounded-[2rem] border-2 border-gray-100 dark:border-gray-700 shadow-sm">
+               <h4 className="font-black text-xl mb-4 flex items-center">
+                 <ShoppingBag className="h-5 w-5 mr-2 text-blue-500" /> Items ({cartItems.length})
+               </h4>
+               <div className="space-y-3 max-h-48 overflow-y-auto pr-2">
+                  {cartItems.map(item => (
+                    <div key={item.id} className="flex justify-between text-sm">
+                       <span className="text-gray-600 dark:text-gray-400">{item.name} x{item.quantity}</span>
+                       <span className="font-bold">${(item.price * item.quantity).toFixed(2)}</span>
+                    </div>
+                  ))}
+                  {cartItems.length === 0 && <p className="text-gray-400 italic text-sm">Cart is empty</p>}
+               </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

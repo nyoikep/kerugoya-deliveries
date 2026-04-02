@@ -17,8 +17,31 @@ export default function AdminPage() {
   const [pendingUsers, setPendingUsers] = useState<any[]>([]);
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'overview' | 'users'>('overview');
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [newUser, setNewUser] = useState({ name: '', email: '', phone: '', password: '', role: 'CLIENT' });
+  const [isAddingUser, setIsAddingUser] = useState(false);
   
   const router = useRouter();
+
+  const fetchData = async (token: string) => {
+    try {
+      const [ridersRes, deliveriesRes, pendingRes, allUsersRes] = await Promise.all([
+        fetch('/api/riders', { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch('/api/deliveries', { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch('/api/admin/users', { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch('/api/admin/users/all', { headers: { 'Authorization': `Bearer ${token}` } })
+      ]);
+      
+      if (ridersRes.ok) setRiders(await ridersRes.json());
+      if (deliveriesRes.ok) setDeliveries(await deliveriesRes.json());
+      if (pendingRes.ok) setPendingUsers(await pendingRes.json());
+      if (allUsersRes.ok) setAllUsers(await allUsersRes.json());
+    } catch (e) {
+      console.error("Error fetching admin data:", e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -53,26 +76,6 @@ export default function AdminPage() {
       }
     };
 
-    const fetchData = async (token: string) => {
-      try {
-        const [ridersRes, deliveriesRes, pendingRes, allUsersRes] = await Promise.all([
-          fetch('/api/riders', { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch('/api/deliveries', { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch('/api/admin/users', { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch('/api/admin/users/all', { headers: { 'Authorization': `Bearer ${token}` } })
-        ]);
-        
-        if (ridersRes.ok) setRiders(await ridersRes.json());
-        if (deliveriesRes.ok) setDeliveries(await deliveriesRes.json());
-        if (pendingRes.ok) setPendingUsers(await pendingRes.json());
-        if (allUsersRes.ok) setAllUsers(await allUsersRes.json());
-      } catch (e) {
-        console.error("Error fetching admin data:", e);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     checkAdmin();
   }, [router]);
 
@@ -93,10 +96,60 @@ export default function AdminPage() {
           // Re-fetch riders if it was a rider
           const ridersRes = await fetch('/api/riders', { headers: { 'Authorization': `Bearer ${token}` } });
           if (ridersRes.ok) setRiders(await ridersRes.json());
+          // Refresh all users
+          fetchData(token!);
         }
       }
     } catch (e) {
       console.error("Error updating user status:", e);
+    }
+  };
+
+  const handleAddUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const token = localStorage.getItem('token');
+    setIsAddingUser(true);
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(newUser)
+      });
+      if (res.ok) {
+        setShowAddUserModal(false);
+        setNewUser({ name: '', email: '', phone: '', password: '', role: 'CLIENT' });
+        fetchData(token!);
+      } else {
+        const data = await res.json();
+        alert(data.message || 'Failed to add user');
+      }
+    } catch (e) {
+      console.error("Error adding user:", e);
+    } finally {
+      setIsAddingUser(false);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
+    
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`/api/admin/users?id=${userId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setAllUsers(prev => prev.filter(u => u.id !== userId));
+      } else {
+        const data = await res.json();
+        alert(data.message || 'Failed to delete user');
+      }
+    } catch (e) {
+      console.error("Error deleting user:", e);
     }
   };
 
@@ -261,9 +314,18 @@ export default function AdminPage() {
           </>
         ) : (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="p-6 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-              <h2 className="text-xl font-bold dark:text-white">All Registered Accounts</h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Manage all system users, view account details, and security tokens.</p>
+            <div className="p-6 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-bold dark:text-white">All Registered Accounts</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Manage all system users, view account details, and security tokens.</p>
+              </div>
+              <button 
+                onClick={() => setShowAddUserModal(true)}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-md transition-all flex items-center"
+              >
+                <Users className="mr-2 h-4 w-4" />
+                Add New User
+              </button>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
@@ -272,8 +334,8 @@ export default function AdminPage() {
                     <th className="p-4">Name & Role</th>
                     <th className="p-4">Contact</th>
                     <th className="p-4">ID / Plate</th>
-                    <th className="p-4">Encrypted Password</th>
                     <th className="p-4">Status</th>
+                    <th className="p-4">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y dark:divide-gray-700">
@@ -301,18 +363,21 @@ export default function AdminPage() {
                         ) : <span className="text-gray-400">-</span>}
                       </td>
                       <td className="p-4">
-                        <div className="max-w-[150px] truncate text-[10px] bg-gray-100 dark:bg-gray-900 p-2 rounded border dark:border-gray-700 font-mono text-gray-500" title={u.password}>
-                          {u.password}
-                        </div>
-                        <p className="text-[9px] text-gray-400 mt-1 italic">* Encrypted via Bcrypt</p>
-                      </td>
-                      <td className="p-4">
                         <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
                           u.status === 'APPROVED' ? 'bg-green-100 text-green-700' : 
                           u.status === 'PENDING' ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'
                         }`}>
                           {u.status}
                         </span>
+                      </td>
+                      <td className="p-4">
+                        <button 
+                          onClick={() => handleDeleteUser(u.id)}
+                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-all"
+                          title="Delete User"
+                        >
+                          <AlertCircle className="h-5 w-5" />
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -322,6 +387,96 @@ export default function AdminPage() {
           </div>
         )}
       </main>
+
+      {/* Add User Modal */}
+      {showAddUserModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-6 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex justify-between items-center">
+              <h3 className="text-xl font-bold dark:text-white">Add New System User</h3>
+              <button onClick={() => setShowAddUserModal(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                <LogOut className="h-5 w-5" />
+              </button>
+            </div>
+            <form onSubmit={handleAddUser} className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Full Name</label>
+                <input 
+                  type="text" 
+                  required
+                  value={newUser.name}
+                  onChange={(e) => setNewUser({...newUser, name: e.target.value})}
+                  className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none dark:text-white"
+                  placeholder="e.g. Jane Smith"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Email</label>
+                  <input 
+                    type="email" 
+                    required
+                    value={newUser.email}
+                    onChange={(e) => setNewUser({...newUser, email: e.target.value})}
+                    className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none dark:text-white"
+                    placeholder="jane@test.com"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Phone</label>
+                  <input 
+                    type="tel" 
+                    required
+                    value={newUser.phone}
+                    onChange={(e) => setNewUser({...newUser, phone: e.target.value})}
+                    className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none dark:text-white"
+                    placeholder="0712345678"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Password</label>
+                <input 
+                  type="password" 
+                  required
+                  value={newUser.password}
+                  onChange={(e) => setNewUser({...newUser, password: e.target.value})}
+                  className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none dark:text-white"
+                  placeholder="Min 6 characters"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Account Role</label>
+                <select 
+                  value={newUser.role}
+                  onChange={(e) => setNewUser({...newUser, role: e.target.value})}
+                  className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none dark:text-white"
+                >
+                  <option value="CLIENT">Client / Business Owner</option>
+                  <option value="RIDER">Delivery Rider</option>
+                  <option value="ADMIN">System Administrator</option>
+                </select>
+              </div>
+              <div className="pt-4 flex gap-3">
+                <button 
+                  type="button"
+                  onClick={() => setShowAddUserModal(false)}
+                  className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-bold rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  disabled={isAddingUser}
+                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-lg disabled:opacity-50 transition-all"
+                >
+                  {isAddingUser ? 'Creating...' : 'Create Account'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

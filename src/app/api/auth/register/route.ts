@@ -5,7 +5,9 @@ import jwt from 'jsonwebtoken';
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, phone, password, name, role, idNumber, motorcyclePlateNumber, idCardUrl } = await req.json();
+    const { email: rawEmail, phone: rawPhone, password, name, role, idNumber, motorcyclePlateNumber, idCardUrl } = await req.json();
+    const email = rawEmail?.toLowerCase().trim();
+    const phone = rawPhone?.replace(/\D/g, '').trim();
 
     // Basic validation for all users
     if (!email || !phone || !password || !name) {

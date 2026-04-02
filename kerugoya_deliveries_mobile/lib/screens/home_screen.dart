@@ -71,15 +71,16 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildHeroSection(),
+            _buildUberHero(),
             _buildQuickActions(),
-            _buildShopCategories(),
+            _buildPromotionBanner(),
+            _buildRideOptions(),
             _buildFeaturedSection(),
-            _buildPromotions(),
             _buildFooter(),
           ],
         ),
@@ -87,120 +88,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildShopCategories() {
-    final categories = ['All', 'Food', 'Grocery', 'Pharmacy', 'Hardware', 'Wine & Spirit'];
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          child: Text('Shop by Category', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-        ),
-        SizedBox(
-          height: 100,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: categories.length,
-            itemBuilder: (context, index) {
-              final cat = categories[index];
-              return InkWell(
-                onTap: () {
-                  if (_checkAuth()) {
-                    widget.onNavigate?.call(1);
-                  }
-                },
-                child: Container(
-                  width: 80,
-                  margin: const EdgeInsets.only(right: 12),
-                  child: Column(
-                    children: [
-                      CircleAvatar(
-                        radius: 30,
-                        backgroundColor: Colors.grey[100],
-                        child: Icon(_getCategoryIcon(cat), color: Colors.black, size: 24),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(cat, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500), textAlign: TextAlign.center, maxLines: 1),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  IconData _getCategoryIcon(String category) {
-    switch (category) {
-      case 'Food': return Icons.restaurant;
-      case 'Grocery': return Icons.shopping_basket;
-      case 'Pharmacy': return Icons.local_pharmacy;
-      case 'Hardware': return Icons.build;
-      case 'Wine & Spirit': return Icons.wine_bar;
-      default: return Icons.category;
-    }
-  }
-
-  Widget _buildFooter() {
-    return Container(
-      padding: const EdgeInsets.all(40),
-      color: Colors.grey[50],
-      width: double.infinity,
-      child: Column(
-        children: [
-          Image.asset('assets/logo.jpg', height: 40, opacity: const AlwaysStoppedAnimation(0.5)),
-          const SizedBox(height: 20),
-          Text(
-            '© 2026 Kerugoya Deliveries. All rights reserved.',
-            style: TextStyle(color: Colors.grey[600], fontSize: 12),
-          ),
-          const SizedBox(height: 5),
-          Text(
-            'Designed and developed by Peter Maina.',
-            style: TextStyle(color: Colors.grey[500], fontSize: 11),
-          ),
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildFooterLink('Terms'),
-              const Text(' • ', style: TextStyle(color: Colors.grey)),
-              _buildFooterLink('Privacy'),
-              const Text(' • ', style: TextStyle(color: Colors.grey)),
-              _buildFooterLink('Contact'),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFooterLink(String text) {
-    return Text(
-      text,
-      style: TextStyle(color: Colors.grey[600], fontSize: 12, fontWeight: FontWeight.bold),
-    );
-  }
-
-  Widget _buildHeroSection() {
+  Widget _buildUberHero() {
     return Stack(
       children: [
         Container(
-          height: 450,
+          height: 300,
           width: double.infinity,
-          foregroundDecoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Colors.black.withOpacity(0.1),
-                Colors.black.withOpacity(0.8),
-              ],
-            ),
-          ),
           child: _isVideoInitialized
               ? AspectRatio(
                   aspectRatio: _videoController.value.aspectRatio,
@@ -208,88 +101,72 @@ class _HomeScreenState extends State<HomeScreen> {
                 )
               : Image.asset('assets/pexels-bruce-byereta-422939715-31961615.jpg', fit: BoxFit.cover),
         ),
-        Positioned(
-          bottom: 40,
-          left: 20,
-          right: 20,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Go Anywhere with\nKerugoya',
-                style: TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold, height: 1.1),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'Request a ride, order a delivery.\nYour city is in your hands.',
-                style: TextStyle(color: Colors.white70, fontSize: 18),
-              ),
-              const SizedBox(height: 30),
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: InkWell(
-                        onTap: () {
-                          if (_checkAuth()) {
-                            Navigator.of(context).push(MaterialPageRoute(builder: (context) => const CheckoutScreen()));
-                          }
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 15),
-                          decoration: BoxDecoration(
-                            color: Colors.black,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Center(child: Text('Request a Ride', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: InkWell(
-                        onTap: () {
-                          if (_checkAuth()) {
-                            if (widget.onNavigate != null) widget.onNavigate!(1);
-                          }
-                        },
-                        child: const Center(child: Text('Order Delivery', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold))),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+        Container(
+          height: 300,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Colors.black.withOpacity(0.3), Colors.white],
+            ),
           ),
         ),
         SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Image.asset('assets/logo.jpg', height: 40),
-                if (widget.userRole == 'GUEST')
-                  CircleAvatar(
-                    backgroundColor: Colors.white,
-                    child: IconButton(
-                      icon: const Icon(Icons.person_outline, color: Colors.black),
-                      onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => const LoginScreen())),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Image.asset('assets/logo.jpg', height: 35),
+                    if (widget.userRole != 'GUEST')
+                      IconButton(
+                        icon: const Icon(Icons.logout, color: Colors.white),
+                        onPressed: () {
+                          Provider.of<SocketService>(context, listen: false).reset();
+                          Provider.of<AuthProvider>(context, listen: false).logout();
+                        },
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 40),
+                const Text(
+                  'Where to?',
+                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: Colors.black),
+                ),
+                const SizedBox(height: 20),
+                GestureDetector(
+                  onTap: () {
+                    if (_checkAuth()) {
+                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => const CheckoutScreen()));
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(30),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5))],
                     ),
-                  )
-                else
-                  IconButton(
-                    icon: const Icon(Icons.logout, color: Colors.white),
-                    onPressed: () {
-                      Provider.of<SocketService>(context, listen: false).reset();
-                      Provider.of<AuthProvider>(context, listen: false).logout();
-                    },
+                    child: Row(
+                      children: [
+                        const Icon(Icons.search, color: Colors.black, size: 28),
+                        const SizedBox(width: 15),
+                        Text('Enter destination', style: TextStyle(color: Colors.grey[600], fontSize: 18, fontWeight: FontWeight.w500)),
+                      ],
+                    ),
                   ),
+                ),
+                const SizedBox(height: 15),
+                Row(
+                  children: [
+                    _buildNowLaterChip(Icons.access_time_filled, 'Now', true),
+                    const SizedBox(width: 10),
+                    _buildNowLaterChip(Icons.calendar_month, 'Schedule', false),
+                  ],
+                ),
               ],
             ),
           ),
@@ -298,51 +175,128 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildNowLaterChip(IconData icon, String label, bool isActive) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: isActive ? Colors.black : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: isActive ? Colors.white : Colors.black),
+          const SizedBox(width: 8),
+          Text(label, style: TextStyle(color: isActive ? Colors.white : Colors.black, fontWeight: FontWeight.bold, fontSize: 13)),
+        ],
+      ),
+    );
+  }
+
   Widget _buildQuickActions() {
     return Padding(
       padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text('What can we help you find?', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildActionItem(Icons.bike_scooter, 'Ride', Colors.green[50]!, Colors.green, 0),
-              _buildActionItem(Icons.restaurant, 'Food', Colors.orange[50]!, Colors.orange, 1),
-              _buildActionItem(Icons.shopping_basket, 'Grocery', Colors.blue[50]!, Colors.blue, 1),
-              _buildActionItem(Icons.more_horiz, 'More', Colors.grey[100]!, Colors.black54, 5),
-            ],
+          _buildActionCard('Ride', Icons.directions_car, Colors.blue[100]!, 0),
+          _buildActionCard('Package', Icons.inventory_2, Colors.green[100]!, 1),
+          _buildActionCard('Shop', Icons.shopping_bag, Colors.orange[100]!, 1),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionCard(String label, IconData icon, Color color, int tab) {
+    return InkWell(
+      onTap: () {
+        if (_checkAuth()) {
+          if (tab == 0) {
+            Navigator.of(context).push(MaterialPageRoute(builder: (context) => const CheckoutScreen()));
+          } else {
+            widget.onNavigate?.call(tab);
+          }
+        }
+      },
+      child: Container(
+        width: 100,
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 32, color: Colors.black87),
+            const SizedBox(height: 10),
+            Text(label, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPromotionBanner() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.blue[600],
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Try Kerugoya Plus', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
+                SizedBox(height: 5),
+                Text('Get priority pickups and exclusive discounts.', style: TextStyle(color: Colors.white70, fontSize: 13)),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          ElevatedButton(
+            onPressed: () {},
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.blue[600], shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+            child: const Text('JOIN', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildActionItem(IconData icon, String label, Color bg, Color iconColor, int targetTab) {
-    return InkWell(
+  Widget _buildRideOptions() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.fromLTRB(20, 30, 20, 10),
+          child: Text('Suggested for you', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+        ),
+        _buildOptionItem(Icons.bolt, 'Pick up now', 'Fastest way to get a ride', 'From \$5.00'),
+        _buildOptionItem(Icons.group, 'Ride Share', 'Save up to 40% on your trip', 'From \$3.50'),
+        _buildOptionItem(Icons.star, 'Premium', 'Top rated drivers & luxury cars', 'From \$12.00'),
+      ],
+    );
+  }
+
+  Widget _buildOptionItem(IconData icon, String title, String sub, String price) {
+    return ListTile(
+      leading: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(10)),
+        child: Icon(icon, color: Colors.black),
+      ),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+      subtitle: Text(sub, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+      trailing: Text(price, style: const TextStyle(fontWeight: FontWeight.bold)),
       onTap: () {
         if (_checkAuth()) {
-          if (targetTab == 0) {
-            Navigator.of(context).push(MaterialPageRoute(builder: (context) => const CheckoutScreen()));
-          } else {
-            if (widget.onNavigate != null) widget.onNavigate!(targetTab);
-          }
+          Navigator.of(context).push(MaterialPageRoute(builder: (context) => const CheckoutScreen()));
         }
       },
-      child: Column(
-        children: [
-          Container(
-            width: 70,
-            height: 70,
-            decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(15)),
-            child: Icon(icon, color: iconColor, size: 30),
-          ),
-          const SizedBox(height: 8),
-          Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
-        ],
-      ),
     );
   }
 
@@ -352,46 +306,35 @@ class _HomeScreenState extends State<HomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          child: Text('Featured near you', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          padding: EdgeInsets.fromLTRB(20, 30, 20, 15),
+          child: Text('Top Rated Businesses', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
         ),
         SizedBox(
-          height: 200,
+          height: 180,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: _featuredBusinesses.length,
             itemBuilder: (context, index) {
               final b = _featuredBusinesses[index];
-              return InkWell(
-                onTap: () {
-                  if (_checkAuth()) {
-                    if (widget.onNavigate != null) widget.onNavigate!(1);
-                  }
-                },
-                child: Container(
-                  width: 280,
-                  margin: const EdgeInsets.only(right: 12),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(15),
-                    image: const DecorationImage(
-                      image: AssetImage('assets/logo.jpg'),
-                      fit: BoxFit.cover,
-                      opacity: 0.1,
+              return Container(
+                width: 150,
+                margin: const EdgeInsets.only(right: 15),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      height: 100,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(20),
+                        image: const DecorationImage(image: AssetImage('assets/logo.jpg'), fit: BoxFit.cover, opacity: 0.2),
+                      ),
                     ),
-                    border: Border.all(color: Colors.grey[200]!),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Text(b.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        Text(b.category, style: TextStyle(color: Colors.grey[600])),
-                      ],
-                    ),
-                  ),
+                    const SizedBox(height: 10),
+                    Text(b.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    Text(b.category, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                  ],
                 ),
               );
             },
@@ -401,37 +344,36 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildPromotions() {
+  Widget _buildFooter() {
     return Container(
-      margin: const EdgeInsets.all(20),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
+      padding: const EdgeInsets.all(40),
+      color: Colors.black,
+      width: double.infinity,
+      child: Column(
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Get 50% off your\nfirst delivery!', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 10),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black),
-                  onPressed: () {
-                    if (_checkAuth()) {
-                      if (widget.onNavigate != null) widget.onNavigate!(1);
-                    }
-                  },
-                  child: const Text('Claim Now'),
-                ),
-              ],
-            ),
+          const Text('KERUGOYA', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: 2)),
+          const SizedBox(height: 20),
+          Text(
+            '© 2026 Kerugoya Deliveries. All rights reserved.',
+            style: TextStyle(color: Colors.grey[600], fontSize: 11),
           ),
-          const Icon(Icons.card_giftcard, color: Colors.orange, size: 60),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildFooterLink('Terms'),
+              const Text(' • ', style: TextStyle(color: Colors.grey)),
+              _buildFooterLink('Privacy'),
+              const Text(' • ', style: TextStyle(color: Colors.grey)),
+              _buildFooterLink('Safety'),
+            ],
+          ),
         ],
       ),
     );
+  }
+
+  Widget _buildFooterLink(String text) {
+    return Text(text, style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold));
   }
 }

@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const { cartItems, clientLocation, destination, riderId } = await req.json();
+    const { cartItems, clientLocation, destination, riderId, scheduledAt } = await req.json();
 
     if (!clientLocation || !destination) {
       return NextResponse.json({ message: 'Missing required fields: clientLocation, destination' }, { status: 400 });
@@ -75,6 +75,7 @@ export async function POST(req: NextRequest) {
         destination: JSON.stringify(destination),
         clientId: decoded.userId,
         riderId: riderId || null,
+        scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
         status: riderId ? 'ACCEPTED' : 'PENDING',
         cartItems: cartItems && cartItems.length > 0 ? {
           create: cartItems.map((item: { id: string; name: string; price: number; quantity: number }) => ({

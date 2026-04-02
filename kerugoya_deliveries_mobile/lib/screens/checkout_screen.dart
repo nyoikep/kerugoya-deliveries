@@ -9,6 +9,7 @@ import 'package:kerugoya_deliveries_mobile/services/socket_service.dart';
 import 'package:kerugoya_deliveries_mobile/screens/login_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:location/location.dart';
+import 'package:intl/intl.dart';
 
 enum CheckoutStep { pickup, destination, selectRider }
 
@@ -30,6 +31,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   GoogleMapController? _mapController;
   final Location _location = Location();
   LatLng _initialPosition = const LatLng(-0.505, 37.285); // Kerugoya area
+  
+  bool _isScheduled = false;
+  DateTime? _scheduledAt;
 
   @override
   void initState() {
@@ -117,6 +121,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         );
         return;
       }
+      if (_isScheduled && _scheduledAt == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select a schedule time.')),
+        );
+        return;
+      }
       _finaliseOrder();
     }
   }
@@ -124,7 +134,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   Future<void> _finaliseOrder() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     if (!authProvider.isAuthenticated) {
-      final result = await Navigator.of(context).push(
+      await Navigator.of(context).push(
         MaterialPageRoute(builder: (context) => const LoginScreen()),
       );
       if (!authProvider.isAuthenticated) return;
@@ -143,12 +153,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         destination: '${_destinationLocation!.latitude},${_destinationLocation!.longitude}',
         riderId: _selectedRiderId,
         socketService: socketService,
+        scheduledAt: _isScheduled ? _scheduledAt?.toIso8601String() : null,
       );
 
       if (mounted) {
         cart.clearCart();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Delivery request created successfully! Riders notified.')),
+          const SnackBar(content: Text('Trip booked successfully! Riders notified.')),
         );
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
@@ -156,8 +167,28 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       setState(() { _isSubmitting = false; });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to create delivery: $e')),
+          SnackBar(content: Text('Failed to book trip: $e')),
         );
+      }
+    }
+  }
+
+  Future<void> _selectDateTime() async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 7)),
+    );
+    if (date != null) {
+      final time = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.now(),
+      );
+      if (time != null) {
+        setState(() {
+          _scheduledAt = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+        });
       }
     }
   }
@@ -165,8 +196,25 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text(_getStepTitle()),
+        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        title: Text(_getStepTitle(), style: const TextStyle(fontWeight: FontWeight.w900)),
+        actions: [
+          if (_currentStep == CheckoutStep.selectRider)
+            Padding(
+              padding: const EdgeInsets.only(right: 10),
+              child: ChoiceChip(
+                label: Text(_isScheduled ? 'SCHEDULED' : 'NOW'),
+                selected: _isScheduled,
+                onSelected: (val) => setState(() => _isScheduled = val),
+                selectedColor: Colors.blue[600],
+                labelStyle: TextStyle(color: _isScheduled ? Colors.white : Colors.black, fontWeight: FontWeight.bold),
+              ),
+            ),
+        ],
       ),
       body: Column(
         children: [
@@ -175,34 +223,89 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ? _buildRiderSelection()
                 : _buildMapSelection(),
           ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                if (_currentStep != CheckoutStep.pickup)
-                  TextButton(
-                    onPressed: () {
-                      setState(() {
-                        if (_currentStep == CheckoutStep.selectRider) {
-                          _currentStep = CheckoutStep.destination;
-                        } else {
-                          _currentStep = CheckoutStep.pickup;
-                        }
-                      });
-                    },
-                    child: const Text('BACK'),
-                  )
-                else
-                  const SizedBox(),
-                ElevatedButton(
+          _buildBottomPanel(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomPanel() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 20, offset: const Offset(0, -5))],
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_currentStep == CheckoutStep.selectRider && _isScheduled)
+            InkWell(
+              onTap: _selectDateTime,
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 15),
+                padding: const EdgeInsets.all(15),
+                decoration: BoxDecoration(color: Colors.blue[50], borderRadius: BorderRadius.circular(15)),
+                child: Row(
+                  children: [
+                    const Icon(Icons.calendar_month, color: Colors.blue),
+                    const SizedBox(width: 15),
+                    Text(
+                      _scheduledAt == null ? 'Select Date & Time' : DateFormat('EEE, MMM d, h:mm a').format(_scheduledAt!),
+                      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
+                    ),
+                    const Spacer(),
+                    const Icon(Icons.edit, size: 16, color: Colors.blue),
+                  ],
+                ),
+              ),
+            ),
+          Row(
+            children: [
+              if (_currentStep != CheckoutStep.pickup)
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 10),
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                        side: const BorderSide(color: Colors.black, width: 2),
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          if (_currentStep == CheckoutStep.selectRider) {
+                            _currentStep = CheckoutStep.destination;
+                          } else {
+                            _currentStep = CheckoutStep.pickup;
+                          }
+                        });
+                      },
+                      child: const Text('BACK', style: TextStyle(color: Colors.black, fontWeight: FontWeight.w900)),
+                    ),
+                  ),
+                ),
+              Expanded(
+                flex: 2,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                    elevation: 5,
+                  ),
                   onPressed: _isSubmitting ? null : _handleNext,
                   child: _isSubmitting
-                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                      : Text(_currentStep == CheckoutStep.selectRider ? 'FINISH' : 'NEXT'),
+                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : Text(
+                          _currentStep == CheckoutStep.selectRider ? (_isScheduled ? 'SCHEDULE TRIP' : 'BOOK NOW') : 'CONTINUE',
+                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+                        ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),
@@ -211,9 +314,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   String _getStepTitle() {
     switch (_currentStep) {
-      case CheckoutStep.pickup: return 'Select Pickup';
-      case CheckoutStep.destination: return 'Select Destination';
-      case CheckoutStep.selectRider: return 'Select Rider';
+      case CheckoutStep.pickup: return 'Set Pickup';
+      case CheckoutStep.destination: return 'Set Destination';
+      case CheckoutStep.selectRider: return 'Confirm Trip';
     }
   }
 
@@ -230,32 +333,44 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 markerId: const MarkerId('pickup'),
                 position: _pickupLocation!,
                 icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-                infoWindow: const InfoWindow(title: 'Pickup Location'),
               ),
             if (_destinationLocation != null)
               Marker(
                 markerId: const MarkerId('destination'),
                 position: _destinationLocation!,
                 icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
-                infoWindow: const InfoWindow(title: 'Destination Location'),
               ),
           },
           myLocationEnabled: true,
           myLocationButtonEnabled: true,
         ),
         Positioned(
-          top: 10,
-          left: 10,
-          right: 10,
+          top: 20,
+          left: 20,
+          right: 20,
           child: Container(
-            padding: const EdgeInsets.all(8),
-            color: Colors.white.withOpacity(0.8),
-            child: Text(
-              _currentStep == CheckoutStep.pickup
-                  ? 'Tap on map to set PICKUP location'
-                  : 'Tap on map to set DESTINATION location',
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+            padding: const EdgeInsets.all(15),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(15),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)],
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  _currentStep == CheckoutStep.pickup ? Icons.radio_button_checked : Icons.location_on,
+                  color: _currentStep == CheckoutStep.pickup ? Colors.green : Colors.orange,
+                ),
+                const SizedBox(width: 15),
+                Expanded(
+                  child: Text(
+                    _currentStep == CheckoutStep.pickup
+                        ? 'Select your pickup point'
+                        : 'Where are you going?',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -264,22 +379,46 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Widget _buildRiderSelection() {
-    if (_isLoadingRiders) return const Center(child: CircularProgressIndicator());
-    if (_availableRiders.isEmpty) return const Center(child: Text('No riders available.'));
+    if (_isLoadingRiders) return const Center(child: CircularProgressIndicator(color: Colors.black));
+    if (_availableRiders.isEmpty) return const Center(child: Text('No active riders found nearby.', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)));
 
     return ListView.builder(
+      padding: const EdgeInsets.all(20),
       itemCount: _availableRiders.length,
       itemBuilder: (context, index) {
         final rider = _availableRiders[index];
-        return ListTile(
-          title: Text(rider.name),
-          subtitle: Text('Plate: ${rider.motorcyclePlateNumber}'),
-          trailing: Radio<String>(
-            value: rider.id,
-            groupValue: _selectedRiderId,
-            onChanged: (val) => setState(() => _selectedRiderId = val),
-          ),
+        final isSelected = _selectedRiderId == rider.id;
+        return InkWell(
           onTap: () => setState(() => _selectedRiderId = rider.id),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 15),
+            padding: const EdgeInsets.all(15),
+            decoration: BoxDecoration(
+              color: isSelected ? Colors.black : Colors.grey[100],
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: isSelected ? Colors.black : Colors.grey[300]!),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(color: isSelected ? Colors.white24 : Colors.white, borderRadius: BorderRadius.circular(12)),
+                  child: Icon(Icons.directions_bike, color: isSelected ? Colors.white : Colors.black),
+                ),
+                const SizedBox(width: 15),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(rider.name, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: isSelected ? Colors.white : Colors.black)),
+                      Text(rider.motorcyclePlateNumber, style: TextStyle(color: isSelected ? Colors.white70 : Colors.grey[600], fontSize: 12, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ),
+                if (isSelected) const Icon(Icons.check_circle, color: Colors.blue),
+              ],
+            ),
+          ),
         );
       },
     );

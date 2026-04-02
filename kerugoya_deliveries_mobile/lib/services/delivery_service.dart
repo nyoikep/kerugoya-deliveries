@@ -55,6 +55,7 @@ class DeliveryService {
     required String clientLocation,
     required String destination,
     String? riderId,
+    String? scheduledAt,
     SocketService? socketService, // Optional socket service to emit ping
   }) async {
     try {
@@ -70,6 +71,7 @@ class DeliveryService {
           'clientLocation': clientLocation,
           'destination': destination,
           'riderId': riderId,
+          'scheduledAt': scheduledAt,
         },
         token: _authProvider.token,
       );

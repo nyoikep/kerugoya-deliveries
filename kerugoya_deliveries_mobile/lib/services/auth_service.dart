@@ -79,4 +79,16 @@ class AuthService {
       throw HttpException(message: 'Failed to register rider.', statusCode: 500);
     }
   }
+
+  Future<void> forgotPassword(String email) async {
+    try {
+      await ApiService.post('auth/forgot-password', {
+        'email': email,
+      });
+    } catch (e) {
+      print('AuthService ForgotPassword Error: $e');
+      if (e is HttpException) rethrow;
+      throw HttpException(message: 'Failed to request password reset.', statusCode: 500);
+    }
+  }
 }

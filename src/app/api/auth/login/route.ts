@@ -5,7 +5,9 @@ import jwt from 'jsonwebtoken';
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, phone, password } = await req.json();
+    const { email: rawEmail, phone: rawPhone, password } = await req.json();
+    const email = rawEmail?.toLowerCase().trim();
+    const phone = rawPhone?.replace(/\D/g, '').trim();
 
     if ((!email && !phone) || !password) {
       return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
@@ -16,13 +18,21 @@ export async function POST(req: NextRequest) {
       console.log(`[LOGIN DEBUG] Connecting to Prisma...`);
       await prisma.$connect();
       
-      console.log(`[LOGIN DEBUG] Attempting login for email: ${email} or phone: ${phone}`);
-      console.log(`[LOGIN DEBUG] DATABASE_URL present: ${!!process.env.DATABASE_URL}`);
+      console.log(`[LOGIN DEBUG] Attempting login for identifier: ${email || phone}`);
       
       if (email) {
+        // Try email first
         user = await prisma.user.findUnique({
           where: { email },
         });
+
+        // If not found and looks like a phone number, try phone
+        if (!user && /^\d+$/.test(email.replace(/\D/g, ''))) {
+          const possiblePhone = email.replace(/\D/g, '');
+          user = await prisma.user.findUnique({
+            where: { phone: possiblePhone },
+          });
+        }
       } else if (phone) {
         user = await prisma.user.findUnique({
           where: { phone },

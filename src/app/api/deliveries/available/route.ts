@@ -20,8 +20,10 @@ export async function GET(req: NextRequest) {
 
     const availableRequests = await prisma.deliveryRequest.findMany({
       where: { 
-        status: 'PENDING',
-        riderId: null 
+        OR: [
+          { status: 'PENDING', riderId: null },
+          { status: 'ACCEPTED', scheduledAt: { not: null } } // Include scheduled requests that are accepted
+        ]
       },
       include: {
         client: { select: { name: true, phone: true, email: true } },

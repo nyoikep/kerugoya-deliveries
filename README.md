@@ -1,49 +1,46 @@
-# Kerugoya Connect: Revolutionizing Urban Mobility & Delivery
+# Kerugoya: The Future of Urban Mobility & Delivery in Kenya
 
 ## Vision
-Kerugoya Connect aims to be the leading platform for urban mobility and logistics in Kerugoya, Kenya. We provide a seamless, intuitive, and efficient solution for ride-hailing and on-demand delivery services, connecting users with reliable drivers and businesses. Our mission is to transform urban transportation, making it safer, more accessible, and more convenient for everyone.
+Kerugoya is the premier platform for urban mobility and logistics, specifically tailored for the Kenyan market. Inspired by industry leaders like Uber and Bolt, we provide a seamless, intuitive, and highly efficient solution for ride-hailing and on-demand delivery. Our mission is to simplify movement and commerce, making it safer and more convenient for every citizen.
 
-## Key Features for Investors
+## 🚀 Major 2026 Upgrade: The "Brilliant" Update
 
-### 1. **Intuitive Ride-Hailing Experience (Uber-like)**
-*   **Dynamic Booking Widget:** Users can effortlessly request rides by entering pickup and destination locations directly from the landing page.
-*   **Real-time Driver Tracking:** Live updates on driver location, estimated arrival times, and route progression provide transparency and peace of mind.
-*   **Simulated Driver Network:** The platform showcases a dynamic network of available drivers on the map, illustrating a robust and responsive service.
+We have completely overhauled the platform to provide a world-class experience that rivals international competitors.
 
-### 2. **Integrated On-Demand Delivery Services**
-*   **Comprehensive Shop Interface:** A beautifully designed interface allows users to browse businesses and products, add items to their cart, and place delivery orders.
-*   **Efficient Order Tracking:** Users can monitor the status of their delivery requests and track rider locations in real-time.
-*   **Seamless Delivery Workflow:** From order placement to rider acceptance and final delivery, the system ensures a smooth process for both customers and riders.
+### 🚗 Premium Ride-Hailing Experience
+*   **Request for Now or Later:** A flexible scheduling system allows users to book immediate pickups or plan trips up to 7 days in advance.
+*   **Uber-Inspired UI/UX:** A destination-first booking flow with a modern, high-contrast design optimized for speed and clarity.
+*   **Pick Up Now Shortcut:** Prominent dashboard icons for the fastest possible ride requests.
+*   **Smart Trip Summaries:** Real-time distance and time estimations with transparent pricing breakdowns.
 
-### 3. **Modern & Engaging User Interface (UI/UX)**
-*   **Clean and Responsive Design:** A sleek, modern design across all touchpoints (landing page, login, registration, delivery flow, rider dashboard) ensures an enjoyable user experience on any device.
-*   **Interactive Maps:** Powered by Leaflet and OpenStreetMap, the interactive maps are central to the user experience, providing clear visualization of locations and routes.
-*   **Consistent Branding:** A unified visual identity across the application reflects professionalism and builds trust.
+### 📦 Integrated Logistics & Commerce
+*   **Unified Delivery Ecosystem:** Send packages across the city or order from local shops within the same intuitive interface.
+*   **Live Tracking:** State-of-the-art real-time monitoring of riders and deliveries via Socket.IO.
+*   **Multi-Platform Synchronization:** A consistent experience across Web and Mobile (Flutter) applications.
 
-### 4. **Robust & Scalable Technology Stack**
-*   **Next.js (React Framework):** Leverages server-side rendering (SSR) and client-side rendering for optimal performance and SEO, built on a highly performant and modern web framework.
-*   **Socket.IO for Real-time Communication:** Enables instant updates for live tracking, new delivery requests, and dynamic interactions, ensuring a responsive and engaging user experience.
-*   **Prisma ORM:** Provides a type-safe and efficient database access layer, supporting a flexible and scalable backend.
-*   **Tailwind CSS:** For rapid and consistent UI development, ensuring a polished and customizable aesthetic.
+### 🛠️ Advanced Administration & Safety
+*   **Complete User Management:** Admins can now add, verify, and manage all system users directly from an enhanced dashboard.
+*   **Secure Authentication:** Robust credential handling with automatic normalization (case-insensitivity and phone formatting) to ensure a frustration-free login experience.
+*   **Rider-First Portal:** A dedicated mobile experience for riders to manage their workload and navigate efficiently.
 
-### 5. **Dedicated Rider Dashboard**
-*   **Streamlined Request Management:** Riders receive immediate notifications for new delivery requests with full details.
-*   **Live Tracking & Navigation:** Riders can view client locations and delivery destinations on an interactive map.
-*   **Performance Metrics (Future):** Built to support future enhancements like earnings tracking, route optimization, and performance feedback.
+## 🏗️ Robust Technology Stack
+*   **Web:** Next.js 15, TypeScript, Tailwind CSS, Lucide Icons.
+*   **Mobile:** Flutter 3.x, Dart (Cross-platform Android & iOS).
+*   **Backend:** Node.js, Prisma ORM (SQLite for Dev), Socket.IO.
+*   **Communication:** Real-time bi-directional events for live tracking and instant notifications.
 
-## Getting Started
+## 📱 Getting Started
 
-To explore the Kerugoya Connect platform:
+### For Users (Web)
+1.  Visit the landing page.
+2.  Enter your "Where to?" details.
+3.  Choose "Now" or "Schedule" for later.
+4.  Track your rider in real-time.
 
-1.  **Clone the repository:**
-    `git clone [repository-url]`
-2.  **Install dependencies:**
-    `npm install`
-3.  **Run the development server:**
-    `npm run dev`
-4.  **Open in browser:**
-    Navigate to `http://localhost:3000`
+### For Riders & Mobile Users
+1.  Download the **Kerugoya v4.3 APK** from the desktop.
+2.  Register as a Rider or Client.
+3.  Experience the power of local logistics.
 
-## Contact & Demo
-
-We are excited about the potential of Kerugoya Connect and welcome the opportunity to provide a live demonstration and discuss our detailed business plan. Please contact [Your Contact Information] for more details.
+---
+© 2026 Kerugoya Deliveries Inc. | Designed for Kenya, Built for the World.

@@ -28,11 +28,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     setState(() { _isLoading = true; });
 
     try {
-      // We'll reuse the existing API if possible or just simulate for now
-      // Assuming there is an endpoint like /api/auth/forgot-password
-      await ApiService.post('auth/forgot-password', {
-        'email': _emailController.text,
-      });
+      await AuthService().forgotPassword(_emailController.text);
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

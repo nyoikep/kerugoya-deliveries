@@ -36,11 +36,24 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // In a real application, send an email to the user with the reset link:
-    // const resetUrl = `${req.nextUrl.origin}/reset-password/${resetToken}`;
-    // await sendEmail({ to: user.email, subject: 'Password Reset Request', text: `Please use this link to reset your password: ${resetUrl}` });
+    // In a development environment, we log the link to the console:
+    const resetUrl = `${req.nextUrl.origin}/reset-password/${resetToken}`;
+    console.log(`[PASSWORD RESET] Reset link for ${user.email}: ${resetUrl}`);
 
-    return NextResponse.json({ message: 'If an account with that email exists, a password reset link has been sent.' }, { status: 200 });
+    // To send actual emails, you need to install nodemailer and provide SMTP credentials
+    // import nodemailer from 'nodemailer';
+    // const transporter = nodemailer.createTransport({ ...SMTP_CONFIG });
+    // await transporter.sendMail({
+    //   from: '"Kerugoya Deliveries" <noreply@kerugoya.com>',
+    //   to: user.email,
+    //   subject: "Password Reset Request",
+    //   html: `<p>You requested a password reset. Click <a href="${resetUrl}">here</a> to reset your password.</p>`
+    // });
+
+    return NextResponse.json({ 
+      message: 'If an account with that email exists, a password reset link has been sent.',
+      debug_link: process.env.NODE_ENV === 'development' ? resetUrl : undefined // Only for dev convenience
+    }, { status: 200 });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
