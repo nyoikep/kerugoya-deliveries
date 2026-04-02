@@ -35,6 +35,9 @@ function NewDeliveryContent() {
   const searchParams = useSearchParams();
   const { cartItems, clearCart, getTotalPrice, isHydrated } = useCart();
 
+  const initialPickup = searchParams.get('pickup');
+  const initialDestination = searchParams.get('destination');
+
   useEffect(() => {
     if (searchParams.get('scheduled') === 'true') {
       setIsScheduled(true);
