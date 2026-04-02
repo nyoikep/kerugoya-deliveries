@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -10,7 +10,12 @@ export default function HomePage() {
   const [pickupLocation, setPickupLocation] = useState('');
   const [destinationLocation, setDestinationLocation] = useState('');
   const [requestType, setRequestType] = useState<'now' | 'later'>('now');
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleRequestRide = () => {
     const query = new URLSearchParams();
@@ -19,6 +24,10 @@ export default function HomePage() {
     if (requestType === 'later') query.append('scheduled', 'true');
     router.push(`/new-delivery?${query.toString()}`);
   };
+
+  if (!mounted) {
+    return <div className="min-h-screen bg-white dark:bg-gray-900" />;
+  }
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans">

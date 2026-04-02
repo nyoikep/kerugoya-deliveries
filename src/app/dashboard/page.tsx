@@ -13,8 +13,10 @@ export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [deliveries, setDeliveries] = useState<any[]>([]);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const token = localStorage.getItem('token');
     if (!token) {
       router.push('/login');
@@ -43,7 +45,7 @@ export default function DashboardPage() {
     router.push('/login');
   };
 
-  if (!user) {
+  if (!mounted || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p>Loading...</p>

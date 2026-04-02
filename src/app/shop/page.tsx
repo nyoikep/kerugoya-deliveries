@@ -38,6 +38,11 @@ export default function ShopPage() {
   const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [riders, setRiders] = useState<Rider[]>([]);
   const [showMap, setShowMap] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Dynamically import MapPicker to avoid SSR issues with Leaflet
   const MapPicker = useMemo(() => dynamic(() => import('@/components/MapPicker'), {
@@ -95,7 +100,7 @@ export default function ShopPage() {
     }, {} as Record<string, Business[]>);
   }, [businesses]);
 
-  if (loading) {
+  if (!mounted || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
         <p className="text-xl text-gray-700 dark:text-gray-300">Loading businesses...</p>
