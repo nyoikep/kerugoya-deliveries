@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
-import { jwtVerify } from 'jose';
+import jwt from 'jsonwebtoken';
 
 async function isAdmin(req: NextRequest) {
   const authHeader = req.headers.get('authorization');
@@ -9,11 +9,11 @@ async function isAdmin(req: NextRequest) {
   
   const token = authHeader.split(' ')[1];
   try {
-    const { payload } = await jwtVerify(
+    const decoded = jwt.verify(
       token,
-      new TextEncoder().encode(process.env.JWT_SECRET || 'kerugoya_fallback_secret_2026')
-    );
-    return payload.role === 'ADMIN';
+      process.env.JWT_SECRET || 'kerugoya_fallback_secret_2026'
+    ) as { role: string };
+    return decoded.role === 'ADMIN';
   } catch (e) {
     return false;
   }
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { email, phone, password, name, role } = await req.json();
+    const { email, phone, password, name, role, idNumber, motorcyclePlateNumber } = await req.json();
     
     const normalizedEmail = email.toLowerCase().trim();
     const normalizedPhone = phone.replace(/\D/g, '').trim();
@@ -72,6 +72,8 @@ export async function POST(req: NextRequest) {
         password: hashedPassword,
         name,
         role: role || 'CLIENT',
+        idNumber: idNumber || null,
+        motorcyclePlateNumber: motorcyclePlateNumber || null,
         status: 'APPROVED'
       }
     });

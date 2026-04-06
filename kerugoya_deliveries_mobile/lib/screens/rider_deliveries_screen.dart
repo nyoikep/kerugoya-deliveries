@@ -25,7 +25,7 @@ class _RiderDeliveriesScreenState extends State<RiderDeliveriesScreen> {
   StreamSubscription<LocationData>? _locationSubscription;
   LocationData? _currentRiderLocation;
   final Map<String, LatLng> _clientLocations = {}; // Map deliveryId to client's LatLng
-  late GoogleMapController _mapController;
+  GoogleMapController? _mapController;
   final Set<Marker> _markers = {};
 
   @override
@@ -170,9 +170,9 @@ class _RiderDeliveriesScreenState extends State<RiderDeliveriesScreen> {
       ));
     }
     // If _mapController is available, animate camera to show both client and rider
-    if (_currentRiderLocation != null && _clientLocations.isNotEmpty) {
+    if (_mapController != null && _currentRiderLocation != null && _clientLocations.isNotEmpty) {
       LatLngBounds bounds = _getLatLngBounds();
-      _mapController.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
+      _mapController?.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
     }
     setState(() {}); // Trigger rebuild to update markers
   }

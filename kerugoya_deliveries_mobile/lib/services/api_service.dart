@@ -8,6 +8,15 @@ class ApiService {
     defaultValue: 'https://kerugoya-deliveries-production.up.railway.app/api', // Updated for Railway!
   );
 
+  static String get rootUrl {
+    if (_baseUrl.endsWith('/api')) {
+      return _baseUrl.substring(0, _baseUrl.length - 4);
+    } else if (_baseUrl.endsWith('/api/')) {
+      return _baseUrl.substring(0, _baseUrl.length - 5);
+    }
+    return _baseUrl;
+  }
+
   static Future<Map<String, dynamic>> post(String endpoint, Map<String, dynamic> data, {String? token}) async {
     final headers = <String, String>{'Content-Type': 'application/json'};
     if (token != null) {

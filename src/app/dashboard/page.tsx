@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { Bike, Clock, Navigation, Smartphone, Download } from 'lucide-react';
 
 interface User {
   name: string;

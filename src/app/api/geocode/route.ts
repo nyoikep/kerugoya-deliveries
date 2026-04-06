@@ -8,12 +8,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ message: 'Query parameter is required' }, { status: 400 });
   }
 
-  const googleApiKey = process.env.GOOGLE_PLACES_API_KEY;
-
-  if (!googleApiKey) {
-    console.error('GOOGLE_PLACES_API_KEY is not set in environment variables.');
-    return NextResponse.json({ message: 'Server configuration error: API key missing' }, { status: 500 });
-  }
+  const googleApiKey = process.env.GOOGLE_PLACES_API_KEY || 'AIzaSyDSCzqBwEJM6fel2xLxRCZjvaXjcGEn8Pg';
 
   try {
     const googlePlacesResponse = await fetch(

@@ -1,12 +1,23 @@
 import { PrismaClient } from '@prisma/client';
-import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 import bcrypt from 'bcryptjs';
 
-const adapter = new PrismaBetterSqlite3({
-  url: 'file:./prisma/dev.db'
-});
+let dbUrl = process.env.DATABASE_URL || 'file:./prisma/dev.db';
 
-const prisma = new PrismaClient({ adapter });
+let prisma: PrismaClient;
+
+if (!dbUrl.startsWith('file:')) {
+  console.warn(`DATABASE_URL is not a file URL but schema is SQLite. Falling back to local SQLite.`);
+  dbUrl = 'file:./prisma/dev.db';
+}
+
+try {
+  const { PrismaBetterSqlite3 } = require('@prisma/adapter-better-sqlite3');
+  const adapter = new PrismaBetterSqlite3({ url: dbUrl });
+  prisma = new PrismaClient({ adapter });
+} catch (e) {
+  console.error('Failed to load SQLite adapter:', e);
+  prisma = new PrismaClient({} as any);
+}
 
 async function main() {
   // Check if we should actually seed (useful for production safety)
@@ -227,39 +238,41 @@ async function main() {
 
   // Create Products for Lokko Motto
   const products = [
-    { name: 'Johnnie Walker Red Label (750ml)', description: 'Scotch Whisky', price: 2500, businessId: lokkoMotto.id },
-    { name: 'Smirnoff Vodka (750ml)', description: 'Premium Vodka', price: 1800, businessId: lokkoMotto.id },
-    { name: 'Gilbeys Gin (750ml)', description: 'Classic Gin', price: 1500, businessId: lokkoMotto.id },
-    { name: 'Tusker Lager (500ml)', description: 'Local Beer', price: 250, businessId: lokkoMotto.id },
-    { name: 'Guinness Stout (500ml)', description: 'Dark Beer', price: 300, businessId: lokkoMotto.id },
-    { name: 'Four Cousins Sweet Red (750ml)', description: 'Sweet Red Wine', price: 1200, businessId: lokkoMotto.id },
-    { name: 'K.C.B. Brandy (750ml)', description: 'Kenyan Brandy', price: 1000, businessId: lokkoMotto.id },
-    { name: 'Nederburg Baronne (750ml)', description: 'Red Wine', price: 1300, businessId: alphaWines.id },
-    { name: 'Cellar Cask Sweet White (5L)', description: 'Sweet White Wine', price: 2800, businessId: alphaWines.id },
-    { name: 'Caprice Wine (750ml)', description: 'Assorted Flavors', price: 900, businessId: alphaWines.id },
-    { name: 'Drostdy Hof Red (750ml)', description: 'Red Wine', price: 1100, businessId: alphaWines.id },
-    { name: 'Jack Daniels Old No. 7 (750ml)', description: 'Tennessee Whiskey', price: 3500, businessId: mbikaAgencies.id },
-    { name: 'Bombay Sapphire Gin (750ml)', description: 'Premium Gin', price: 2200, businessId: mbikaAgencies.id },
-    { name: 'Absolut Vodka (750ml)', description: 'Swedish Vodka', price: 2000, businessId: mbikaAgencies.id },
-    { name: 'Jameson Irish Whiskey (750ml)', description: 'Irish Whiskey', price: 2800, businessId: mbikaAgencies.id },
-    { name: 'Town Trip', description: 'A trip within the town', price: 150, businessId: bodaBodaServices.id },
-    { name: 'Parcel Delivery', description: 'Deliver a parcel within the town', price: 200, businessId: bodaBodaServices.id },
-    { name: 'Shopping', description: 'We do the shopping for you', price: 300, businessId: bodaBodaServices.id },
-    { name: 'Hammer', description: 'A tool for pounding things.', price: 500, businessId: hardwareStore.id },
-    { name: 'Screwdriver', description: 'A tool for turning screws.', price: 300, businessId: hardwareStore.id },
-    { name: 'Wrench', description: 'A tool for turning nuts and bolts.', price: 400, businessId: hardwareStore.id },
-    { name: 'Chips', description: 'Plain chips.', price: 100, businessId: mrChips.id },
-    { name: 'Chips Masala', description: 'Chips with masala sauce.', price: 150, businessId: mrChips.id },
-    { name: 'Chips and Sausage', description: 'Chips with a sausage.', price: 200, businessId: mrChips.id },
-    { name: 'Beef Stew', description: 'A hearty beef stew.', price: 500, businessId: grandHotel.id },
-    { name: 'Chicken Curry', description: 'A spicy chicken curry.', price: 600, businessId: grandHotel.id },
-    { name: 'Fish and Chips', description: 'Classic fish and chips.', price: 450, businessId: grandHotel.id },
+    { name: 'Johnnie Walker Red Label (750ml)', description: 'Scotch Whisky', price: 2500, businessId: lokkoMotto.id, imageUrl: '/pexels-mcgzay-30661393.jpg' },
+    { name: 'Smirnoff Vodka (750ml)', description: 'Premium Vodka', price: 1800, businessId: lokkoMotto.id, imageUrl: '/pexels-bruce-byereta-422939715-31961615.jpg' },
+    { name: 'Gilbeys Gin (750ml)', description: 'Classic Gin', price: 1500, businessId: lokkoMotto.id, imageUrl: '/pexels-clayton-943956-11206901.jpg' },
+    { name: 'Tusker Lager (500ml)', description: 'Local Beer', price: 250, businessId: lokkoMotto.id, imageUrl: '/pexels-odonti-photography-661992921-27999926.jpg' },
+    { name: 'Guinness Stout (500ml)', description: 'Dark Beer', price: 300, businessId: lokkoMotto.id, imageUrl: 'https://images.unsplash.com/photo-1597075095404-0c2f6236b327?q=80&w=400' },
+    { name: 'Four Cousins Sweet Red (750ml)', description: 'Sweet Red Wine', price: 1200, businessId: lokkoMotto.id, imageUrl: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?q=80&w=400' },
+    { name: 'K.C.B. Brandy (750ml)', description: 'Kenyan Brandy', price: 1000, businessId: lokkoMotto.id, imageUrl: 'https://images.unsplash.com/photo-1614313511387-1436a4480ebb?q=80&w=400' },
+    { name: 'Nederburg Baronne (750ml)', description: 'Red Wine', price: 1300, businessId: alphaWines.id, imageUrl: 'https://images.unsplash.com/photo-1553361371-9bb22f93ed6e?q=80&w=400' },
+    { name: 'Cellar Cask Sweet White (5L)', description: 'Sweet White Wine', price: 2800, businessId: alphaWines.id, imageUrl: 'https://images.unsplash.com/photo-1569919650474-0498f3b6016c?q=80&w=400' },
+    { name: 'Caprice Wine (750ml)', description: 'Assorted Flavors', price: 900, businessId: alphaWines.id, imageUrl: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?q=80&w=400' },
+    { name: 'Drostdy Hof Red (750ml)', description: 'Red Wine', price: 1100, businessId: alphaWines.id, imageUrl: 'https://images.unsplash.com/photo-1553361371-9bb22f93ed6e?q=80&w=400' },
+    { name: 'Jack Daniels Old No. 7 (750ml)', description: 'Tennessee Whiskey', price: 3500, businessId: mbikaAgencies.id, imageUrl: 'https://images.unsplash.com/photo-1527281405159-ca568974777a?q=80&w=400' },
+    { name: 'Bombay Sapphire Gin (750ml)', description: 'Premium Gin', price: 2200, businessId: mbikaAgencies.id, imageUrl: 'https://images.unsplash.com/photo-1559839914-17aae19cea9e?q=80&w=400' },
+    { name: 'Absolut Vodka (750ml)', description: 'Swedish Vodka', price: 2000, businessId: mbikaAgencies.id, imageUrl: 'https://images.unsplash.com/photo-1550985543-f47f38aee65e?q=80&w=400' },
+    { name: 'Jameson Irish Whiskey (750ml)', description: 'Irish Whiskey', price: 2800, businessId: mbikaAgencies.id, imageUrl: 'https://images.unsplash.com/photo-1594224734568-7dfba8d32d04?q=80&w=400' },
+    { name: 'Town Trip', description: 'A trip within the town', price: 150, businessId: bodaBodaServices.id, imageUrl: 'https://images.unsplash.com/photo-1558981403-c5f91cbba527?q=80&w=400' },
+    { name: 'Parcel Delivery', description: 'Deliver a parcel within the town', price: 200, businessId: bodaBodaServices.id, imageUrl: 'https://images.unsplash.com/photo-1566576721346-d4a3b4eaad5b?q=80&w=400' },
+    { name: 'Shopping', description: 'We do the shopping for you', price: 300, businessId: bodaBodaServices.id, imageUrl: 'https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=400' },
+    { name: 'Hammer', description: 'A tool for pounding things.', price: 500, businessId: hardwareStore.id, imageUrl: 'https://images.unsplash.com/photo-1586864387917-f349c4f15ee3?q=80&w=400' },
+    { name: 'Screwdriver', description: 'A tool for turning screws.', price: 300, businessId: hardwareStore.id, imageUrl: 'https://images.unsplash.com/photo-1530124560676-41bc1275d4d6?q=80&w=400' },
+    { name: 'Wrench', description: 'A tool for turning nuts and bolts.', price: 400, businessId: hardwareStore.id, imageUrl: 'https://images.unsplash.com/photo-1620054371900-5178f566e6c4?q=80&w=400' },
+    { name: 'Chips', description: 'Plain chips.', price: 100, businessId: mrChips.id, imageUrl: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?q=80&w=400' },
+    { name: 'Chips Masala', description: 'Chips with masala sauce.', price: 150, businessId: mrChips.id, imageUrl: 'https://images.unsplash.com/photo-1585109649139-366815a0d713?q=80&w=400' },
+    { name: 'Chips and Sausage', description: 'Chips with a sausage.', price: 200, businessId: mrChips.id, imageUrl: 'https://images.unsplash.com/photo-1626078297492-b7ca551ec442?q=80&w=400' },
+    { name: 'Beef Stew', description: 'A hearty beef stew.', price: 500, businessId: grandHotel.id, imageUrl: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?q=80&w=400' },
+    { name: 'Chicken Curry', description: 'A spicy chicken curry.', price: 600, businessId: grandHotel.id, imageUrl: 'https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?q=80&w=400' },
+    { name: 'Fish and Chips', description: 'Classic fish and chips.', price: 450, businessId: grandHotel.id, imageUrl: 'https://images.unsplash.com/photo-1579208575657-c595a05383b7?q=80&w=400' },
   ];
 
   for (const product of products) {
     await prisma.product.upsert({
       where: { name: product.name },
-      update: {},
+      update: {
+        imageUrl: product.imageUrl,
+      },
       create: product,
     });
   }

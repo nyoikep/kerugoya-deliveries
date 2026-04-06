@@ -18,7 +18,7 @@ export default function AdminPage() {
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'overview' | 'users'>('overview');
   const [showAddUserModal, setShowAddUserModal] = useState(false);
-  const [newUser, setNewUser] = useState({ name: '', email: '', phone: '', password: '', role: 'CLIENT' });
+  const [newUser, setNewUser] = useState({ name: '', email: '', phone: '', password: '', role: 'CLIENT', idNumber: '', motorcyclePlateNumber: '' });
   const [isAddingUser, setIsAddingUser] = useState(false);
   
   const router = useRouter();
@@ -120,7 +120,7 @@ export default function AdminPage() {
       });
       if (res.ok) {
         setShowAddUserModal(false);
-        setNewUser({ name: '', email: '', phone: '', password: '', role: 'CLIENT' });
+        setNewUser({ name: '', email: '', phone: '', password: '', role: 'CLIENT', idNumber: '', motorcyclePlateNumber: '' });
         fetchData(token!);
       } else {
         const data = await res.json();
@@ -457,6 +457,33 @@ export default function AdminPage() {
                   <option value="ADMIN">System Administrator</option>
                 </select>
               </div>
+
+              {newUser.role === 'RIDER' && (
+                <div className="grid grid-cols-2 gap-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800 animate-in fade-in duration-300">
+                  <div>
+                    <label className="block text-xs font-bold text-blue-600 dark:text-blue-400 uppercase mb-1">ID Number</label>
+                    <input 
+                      type="text" 
+                      required
+                      value={newUser.idNumber}
+                      onChange={(e) => setNewUser({...newUser, idNumber: e.target.value})}
+                      className="w-full px-4 py-2 bg-white dark:bg-gray-700 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none dark:text-white"
+                      placeholder="National ID"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-blue-600 dark:text-blue-400 uppercase mb-1">Plate Number</label>
+                    <input 
+                      type="text" 
+                      required
+                      value={newUser.motorcyclePlateNumber}
+                      onChange={(e) => setNewUser({...newUser, motorcyclePlateNumber: e.target.value})}
+                      className="w-full px-4 py-2 bg-white dark:bg-gray-700 border dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none dark:text-white"
+                      placeholder="KMD 123X"
+                    />
+                  </div>
+                </div>
+              )}
               <div className="pt-4 flex gap-3">
                 <button 
                   type="button"

@@ -120,73 +120,115 @@ class _RegisterRiderScreenState extends State<RegisterRiderScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Register as Rider'),
+        title: const Text('Rider Registration'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
         child: Form(
           key: _formKey,
-          child: ListView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              const Text(
+                'Drive with Kerugoya',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -0.5),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Complete the form below to become a rider.',
+                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Full Name', prefixIcon: Icon(Icons.person)),
+                decoration: const InputDecoration(
+                  labelText: 'Full Name',
+                  prefixIcon: Icon(Icons.person_outline),
+                  hintText: 'Enter your full name',
+                ),
                 validator: (value) => value == null || value.isEmpty ? 'Please enter your full name' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email)),
+                decoration: const InputDecoration(
+                  labelText: 'Email Address',
+                  prefixIcon: Icon(Icons.email_outlined),
+                  hintText: 'user@example.com',
+                ),
                 validator: (value) => value == null || value.isEmpty || !value.contains('@') ? 'Please enter a valid email' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(labelText: 'Phone Number', prefixIcon: Icon(Icons.phone)),
+                decoration: const InputDecoration(
+                  labelText: 'Phone Number',
+                  prefixIcon: Icon(Icons.phone_outlined),
+                  hintText: 'e.g. 0712345678',
+                ),
                 validator: (value) => value == null || value.isEmpty ? 'Please enter your phone number' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _idNumberController,
-                decoration: const InputDecoration(labelText: 'National ID Number', prefixIcon: Icon(Icons.credit_card)),
+                decoration: const InputDecoration(
+                  labelText: 'National ID Number',
+                  prefixIcon: Icon(Icons.badge_outlined),
+                  hintText: 'e.g. 12345678',
+                ),
                 validator: (value) => value == null || value.isEmpty ? 'Please enter your ID number' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _motorcyclePlateNumberController,
-                decoration: const InputDecoration(labelText: 'Motorcycle Plate Number', prefixIcon: Icon(Icons.two_wheeler)),
+                decoration: const InputDecoration(
+                  labelText: 'Motorcycle Plate Number',
+                  prefixIcon: Icon(Icons.two_wheeler_outlined),
+                  hintText: 'e.g. KMCA 123X',
+                ),
                 validator: (value) => value == null || value.isEmpty ? 'Please enter your motorcycle plate number' : null,
               ),
               const SizedBox(height: 24),
-              const Text('Upload ID/Passport Card', style: TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
+              const Text('Identification Document', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              const SizedBox(height: 12),
               InkWell(
                 onTap: _pickIdCard,
+                borderRadius: BorderRadius.circular(16),
                 child: Container(
-                  height: 150,
+                  height: 140,
                   decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.grey[400]!),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey[200]!, width: 2),
                   ),
                   child: _idCardName == null
-                      ? const Column(
+                      ? Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.cloud_upload, size: 40, color: Colors.grey),
-                            Text('Tap to select file', style: TextStyle(color: Colors.grey)),
+                            Icon(Icons.add_a_photo_outlined, size: 40, color: Colors.orange[800]),
+                            const SizedBox(height: 8),
+                            const Text('Upload ID/Passport Photo', style: TextStyle(color: Colors.black54, fontWeight: FontWeight.bold)),
                           ],
                         )
                       : Center(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.check_circle, color: Colors.green),
-                              const SizedBox(width: 8),
-                              Text(_idCardName!, style: const TextStyle(fontWeight: FontWeight.bold)),
-                            ],
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.green.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.check_circle, color: Colors.green),
+                                const SizedBox(width: 8),
+                                Flexible(child: Text(_idCardName!, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green))),
+                              ],
+                            ),
                           ),
                         ),
                 ),
@@ -196,27 +238,24 @@ class _RegisterRiderScreenState extends State<RegisterRiderScreen> {
                 controller: _passwordController,
                 obscureText: _obscurePassword,
                 decoration: InputDecoration(
-                  labelText: 'Password', 
-                  prefixIcon: const Icon(Icons.lock),
+                  labelText: 'Password',
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  hintText: 'Minimum 6 characters',
                   suffixIcon: IconButton(
                     icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
                     onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                   )
                 ),
-                validator: (value) => value == null || value.length < 6 ? 'Password must be at least 6 characters long' : null,
+                validator: (value) => value == null || value.length < 6 ? 'Password must be at least 6 characters' : null,
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
               _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : ElevatedButton(
                       onPressed: _register,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 15),
-                        backgroundColor: Colors.black,
-                        foregroundColor: Colors.white,
-                      ),
                       child: const Text('Complete Registration'),
                     ),
+              const SizedBox(height: 20),
             ],
           ),
         ),

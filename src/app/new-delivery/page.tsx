@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useCart } from '@/hooks/useCart';
-import { ShoppingCart, MapPin, CreditCard, Bike } from 'lucide-react'; // Assuming lucide-react is installed
+import { ShoppingCart, MapPin, CreditCard, Bike, Clock, Navigation, ShoppingBag } from 'lucide-react'; // Assuming lucide-react is installed
 
 import NoSSR from '@/components/NoSSR'; // Import NoSSR component
 
@@ -279,7 +279,7 @@ function NewDeliveryContent() {
                              </div>
                           </div>
                           <div className="text-right">
-                             <p className="font-black text-xl">${(getTotalPrice() + (estimatedPrice || 0)).toFixed(2)}</p>
+                             <p className="font-black text-xl">Ksh {(getTotalPrice() + (estimatedPrice || 0)).toLocaleString()}</p>
                              <p className="text-xs text-gray-400 font-bold">Estimated Total</p>
                           </div>
                         </div>
@@ -359,15 +359,15 @@ function NewDeliveryContent() {
                 <div className="pt-6 border-t border-white/10">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-gray-400 text-sm">Cart Total</span>
-                    <span className="font-bold">${getTotalPrice().toFixed(2)}</span>
+                    <span className="font-bold">Ksh {getTotalPrice().toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between items-center mb-4">
                     <span className="text-gray-400 text-sm">Ride Fare</span>
-                    <span className="font-bold">${(estimatedPrice || 0).toFixed(2)}</span>
+                    <span className="font-bold">Ksh {(estimatedPrice || 0).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between items-end">
                     <span className="text-white font-black text-lg">Total</span>
-                    <span className="text-3xl font-black text-blue-400">${(getTotalPrice() + (estimatedPrice || 0)).toFixed(2)}</span>
+                    <span className="text-3xl font-black text-blue-400">Ksh {(getTotalPrice() + (estimatedPrice || 0)).toLocaleString()}</span>
                   </div>
                 </div>
               </div>
@@ -382,7 +382,7 @@ function NewDeliveryContent() {
                   {cartItems.map(item => (
                     <div key={item.id} className="flex justify-between text-sm">
                        <span className="text-gray-600 dark:text-gray-400">{item.name} x{item.quantity}</span>
-                       <span className="font-bold">${(item.price * item.quantity).toFixed(2)}</span>
+                       <span className="font-bold">Ksh {(item.price * item.quantity).toLocaleString()}</span>
                     </div>
                   ))}
                   {cartItems.length === 0 && <p className="text-gray-400 italic text-sm">Cart is empty</p>}

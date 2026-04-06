@@ -5,9 +5,17 @@ class SocketService with ChangeNotifier {
   io.Socket? _socket;
   static const String _serverBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://localhost:3000/api',
+    defaultValue: 'https://kerugoya-deliveries-production.up.railway.app/api',
   );
-  final String _serverUrl = _serverBaseUrl.endsWith('/api') ? _serverBaseUrl.substring(0, _serverBaseUrl.length - 4) : _serverBaseUrl;
+  
+  String get _serverUrl {
+    if (_serverBaseUrl.endsWith('/api')) {
+      return _serverBaseUrl.substring(0, _serverBaseUrl.length - 4);
+    } else if (_serverBaseUrl.endsWith('/api/')) {
+      return _serverBaseUrl.substring(0, _serverBaseUrl.length - 5);
+    }
+    return _serverBaseUrl;
+  }
   
   String? _currentDeliveryId;
   bool _isDisposed = false;

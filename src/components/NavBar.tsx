@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import { useCartContext } from '@/contexts/CartContext';
 import { Menu, X, ShoppingCart, Bike, ShieldCheck, Download } from 'lucide-react';
+import Image from 'next/image';
 
 export default function NavBar() {
   const { cartItems } = useCartContext();
@@ -52,11 +53,16 @@ export default function NavBar() {
   return (
     <nav className="bg-white dark:bg-gray-900 border-b dark:border-gray-800 p-4 sticky top-0 z-50 backdrop-blur-md bg-white/80 dark:bg-gray-900/80">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
-        <Link href="/" className="text-2xl font-black text-gray-900 dark:text-gray-100 flex items-center space-x-2">
-          <div className="bg-blue-600 p-1.5 rounded-lg shadow-lg">
-             <Bike className="h-6 w-6 text-white" />
+        <Link href="/" className="flex items-center space-x-2">
+          <div className="relative h-10 w-40">
+             <Image 
+               src="/kerugoya-deliveries-logo.jpg" 
+               alt="Kerugoya Deliveries" 
+               fill 
+               className="object-contain"
+               priority
+             />
           </div>
-          <span>Kerugoya</span>
         </Link>
 
         {/* Desktop Menu */}

@@ -40,7 +40,7 @@ class _MainScreenState extends State<MainScreen> {
           });
         },
       ),
-      const ShopScreen(),
+      ShopScreen(),
       const CartScreen(),
       if (widget.userRole != 'GUEST') ...[
         const DeliveryTrackingScreen(),

@@ -11,7 +11,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string, role: string };
+    const jwtSecret = process.env.JWT_SECRET || 'kerugoya_fallback_secret_2026';
+    const decoded = jwt.verify(token, jwtSecret) as { userId: string, role: string };
     if (!decoded) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
@@ -58,7 +59,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
+    const jwtSecret = process.env.JWT_SECRET || 'kerugoya_fallback_secret_2026';
+    const decoded = jwt.verify(token, jwtSecret) as { userId: string };
     if (!decoded) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }

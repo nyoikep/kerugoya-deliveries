@@ -32,13 +32,21 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _initVideo() {
-    _videoController = VideoPlayerController.asset('assets/5614377-hd_1920_1080_25fps.mp4')
-      ..initialize().then((_) {
-        setState(() { _isVideoInitialized = true; });
-        _videoController.setLooping(true);
-        _videoController.setVolume(0);
-        _videoController.play();
-      });
+    try {
+      _videoController = VideoPlayerController.asset('assets/5614377-hd_1920_1080_25fps.mp4')
+        ..initialize().then((_) {
+          if (mounted) {
+            setState(() { _isVideoInitialized = true; });
+            _videoController.setLooping(true);
+            _videoController.setVolume(0);
+            _videoController.play();
+          }
+        }).catchError((e) {
+          debugPrint('Video initialization error: $e');
+        });
+    } catch (e) {
+      debugPrint('Video controller creation error: $e');
+    }
   }
 
   Future<void> _fetchFeatured() async {
@@ -120,7 +128,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Image.asset('assets/logo.jpg', height: 35),
+                    Image.asset('assets/kerugoya-deliveries-logo.jpg', height: 35),
                     if (widget.userRole != 'GUEST')
                       IconButton(
                         icon: const Icon(Icons.logout, color: Colors.white),
@@ -272,31 +280,43 @@ class _HomeScreenState extends State<HomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Padding(
-          padding: EdgeInsets.fromLTRB(20, 30, 20, 10),
-          child: Text('Suggested for you', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+          padding: EdgeInsets.fromLTRB(20, 30, 20, 15),
+          child: Text('Suggested for you', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
         ),
-        _buildOptionItem(Icons.bolt, 'Pick up now', 'Fastest way to get a ride', 'From \$5.00'),
-        _buildOptionItem(Icons.group, 'Ride Share', 'Save up to 40% on your trip', 'From \$3.50'),
-        _buildOptionItem(Icons.star, 'Premium', 'Top rated drivers & luxury cars', 'From \$12.00'),
+        _buildOptionItem(Icons.bolt, 'Pick up now', 'Fastest way to get a ride', 'From Ksh 150'),
+        _buildOptionItem(Icons.group, 'Ride Share', 'Save up to 40% on your trip', 'From Ksh 100'),
+        _buildOptionItem(Icons.star, 'Premium', 'Top rated drivers & luxury cars', 'From Ksh 350'),
       ],
     );
   }
 
   Widget _buildOptionItem(IconData icon, String title, String sub, String price) {
-    return ListTile(
-      leading: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(10)),
-        child: Icon(icon, color: Colors.black),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[200]!),
       ),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-      subtitle: Text(sub, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-      trailing: Text(price, style: const TextStyle(fontWeight: FontWeight.bold)),
-      onTap: () {
-        if (_checkAuth()) {
-          Navigator.of(context).push(MaterialPageRoute(builder: (context) => const CheckoutScreen()));
-        }
-      },
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.orange.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: Colors.orange[800], size: 28),
+        ),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        subtitle: Text(sub, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+        trailing: Text(price, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Colors.black)),
+        onTap: () {
+          if (_checkAuth()) {
+            Navigator.of(context).push(MaterialPageRoute(builder: (context) => const CheckoutScreen()));
+          }
+        },
+      ),
     );
   }
 
@@ -328,7 +348,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       decoration: BoxDecoration(
                         color: Colors.grey[200],
                         borderRadius: BorderRadius.circular(20),
-                        image: const DecorationImage(image: AssetImage('assets/logo.jpg'), fit: BoxFit.cover, opacity: 0.2),
+                        image: const DecorationImage(image: AssetImage('assets/kerugoya-deliveries-logo.jpg'), fit: BoxFit.cover, opacity: 0.2),
                       ),
                     ),
                     const SizedBox(height: 10),

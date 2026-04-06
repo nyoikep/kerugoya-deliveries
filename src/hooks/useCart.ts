@@ -18,11 +18,17 @@ export function useCart() {
 
   useEffect(() => {
     // Load cart from localStorage on initial render
-    const storedCart = localStorage.getItem('cart');
-    if (storedCart) {
-      setCartItems(JSON.parse(storedCart));
+    try {
+      const storedCart = localStorage.getItem('cart');
+      if (storedCart) {
+        setCartItems(JSON.parse(storedCart));
+      }
+    } catch (error) {
+      console.error('Failed to parse cart from localStorage:', error);
+      localStorage.removeItem('cart'); // Clear corrupted data
+    } finally {
+      setIsHydrated(true); // Mark as hydrated
     }
-    setIsHydrated(true); // Mark as hydrated
   }, []);
 
   useEffect(() => {

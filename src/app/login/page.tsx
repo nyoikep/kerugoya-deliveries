@@ -68,8 +68,19 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-black opacity-60"></div>
       </NoSSR>
       
-      <div className="relative z-10 max-w-md w-full bg-white dark:bg-gray-800 p-8 rounded-lg shadow-2xl">
-        <h2 className="text-3xl font-bold text-center mb-6 text-gray-900 dark:text-gray-100">Login to Kerugoya</h2>
+      <div className="relative z-10 max-w-md w-full bg-white dark:bg-gray-800 p-8 rounded-[2rem] shadow-2xl border dark:border-gray-700">
+        <div className="flex justify-center mb-8">
+           <div className="relative h-12 w-48">
+              <Image 
+                src="/kerugoya-deliveries-logo.jpg" 
+                alt="Kerugoya Deliveries" 
+                fill 
+                className="object-contain"
+                priority
+              />
+           </div>
+        </div>
+        <h2 className="text-2xl font-black text-center mb-6 text-gray-900 dark:text-gray-100 uppercase tracking-tight">Welcome Back</h2>
         {error && <p className="bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 p-3 rounded-md text-center mb-4">{error}</p>}
         
         <form onSubmit={handleSubmit}>

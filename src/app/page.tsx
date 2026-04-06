@@ -175,8 +175,14 @@ export default function HomePage() {
       <footer className="py-12 px-6 border-t dark:border-gray-800">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
            <div className="flex items-center space-x-2">
-              <Bike className="h-8 w-8 text-blue-600" />
-              <span className="text-2xl font-black">Kerugoya</span>
+              <div className="relative h-10 w-40">
+                 <Image 
+                   src="/kerugoya-deliveries-logo.jpg" 
+                   alt="Kerugoya Deliveries" 
+                   fill 
+                   className="object-contain"
+                 />
+              </div>
            </div>
            <div className="flex space-x-8 text-sm font-bold text-gray-500">
               <Link href="/about" className="hover:text-black dark:hover:text-white transition-colors">About</Link>

@@ -40,11 +40,11 @@ model DeliveryRequest {
   clientLocation   String
   destination      String
   status           String            @default("PENDING")
-  scheduledAt      DateTime?
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   clientId         String
   riderId          String?
+  scheduledAt      DateTime?
   cartItems        CartItem[]
   rider            User?             @relation("RiderDeliveries", fields: [riderId], references: [id])
   client           User              @relation("ClientDeliveries", fields: [clientId], references: [id])
@@ -60,6 +60,7 @@ model Product {
   name        String     @unique
   description String?
   price       Float
+  imageUrl    String?
   businessId  String
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt

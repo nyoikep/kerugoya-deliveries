@@ -170,7 +170,7 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen> {
     // If _mapController is available, animate camera to show both client and rider
     if (_mapController != null && _currentClientLocation != null && _riderLocations.isNotEmpty) {
       LatLngBounds bounds = _getLatLngBounds();
-      _mapController!.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
+      _mapController?.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
     }
     setState(() {}); // Trigger rebuild to update markers
   }
