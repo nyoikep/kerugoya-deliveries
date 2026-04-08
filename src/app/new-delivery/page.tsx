@@ -239,6 +239,18 @@ function NewDeliveryContent() {
 
               {step === 'select-rider' && (
                 <div className="mb-8">
+                  {/* Prominent Price Display */}
+                  <div className="mb-8 p-6 bg-green-50 dark:bg-green-900/20 rounded-3xl border-2 border-green-200 dark:border-green-800 flex justify-between items-center animate-in fade-in slide-in-from-top-4 duration-500">
+                    <div>
+                      <p className="text-xs font-black text-green-700 dark:text-green-300 uppercase tracking-widest mb-1">Estimated Journey Price</p>
+                      <h3 className="text-3xl font-black text-gray-900 dark:text-white">Ksh {(estimatedPrice || 0).toLocaleString()}</h3>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1">Distance</p>
+                      <p className="text-xl font-bold dark:text-gray-200">{estimatedDistance?.toFixed(1)} km</p>
+                    </div>
+                  </div>
+
                   {isScheduled && (
                     <div className="mb-8 p-6 bg-blue-50 dark:bg-blue-900/20 rounded-2xl border border-blue-100 dark:border-blue-800">
                       <label className="block text-sm font-black text-blue-900 dark:text-blue-100 uppercase mb-3 flex items-center">

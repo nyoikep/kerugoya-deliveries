@@ -48,10 +48,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'User does not own a business' }, { status: 403 });
     }
 
-    const { name, description, price } = await req.json();
+    const { name, description, price, imageUrl } = await req.json();
 
-    if (!name || !price) {
-      return NextResponse.json({ message: 'Missing required fields: name, price' }, { status: 400 });
+    if (!name || !price || !imageUrl) {
+      return NextResponse.json({ message: 'Missing required fields: name, price, imageUrl' }, { status: 400 });
     }
 
     const newProduct = await prisma.product.create({
@@ -59,6 +59,7 @@ export async function POST(req: NextRequest) {
         name,
         description,
         price,
+        imageUrl,
         businessId: business.id,
       },
     });

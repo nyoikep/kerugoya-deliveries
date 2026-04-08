@@ -100,7 +100,12 @@ class _RegisterClientScreenState extends State<RegisterClientScreen> {
                   prefixIcon: Icon(Icons.person_outline),
                   hintText: 'Enter your full name',
                 ),
-                validator: (value) => value == null || value.isEmpty ? 'Enter full name' : null,
+                validator: (value) {
+                  if (value == null || value.isEmpty) return 'Enter full name';
+                  final parts = value.trim().split(RegExp(r'\s+'));
+                  if (parts.length < 2) return 'Enter at least two names';
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
               TextFormField(

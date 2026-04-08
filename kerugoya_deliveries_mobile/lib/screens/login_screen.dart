@@ -181,16 +181,26 @@ class _LoginScreenState extends State<LoginScreen> {
               
               if (_showMockButtons) ...[
                 const SizedBox(height: 32),
-                const Center(child: Text("DEV MODE: QUICK ACCOUNTS", style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.bold, letterSpacing: 1))),
+                const Center(child: Text("DEV ACCESS (BYPASS LOGIN)", style: TextStyle(fontSize: 12, color: Colors.blue, fontWeight: FontWeight.bold, letterSpacing: 1.5))),
                 const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildMockButton('CLIENT', Icons.person),
-                    _buildMockButton('RIDER', Icons.directions_bike),
-                    _buildMockButton('ADMIN', Icons.admin_panel_settings),
-                  ],
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.blue.withOpacity(0.1)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildMockButton('CLIENT', Icons.person_search),
+                      _buildMockButton('RIDER', Icons.moped),
+                      _buildMockButton('ADMIN', Icons.dashboard_customize),
+                    ],
+                  ),
                 ),
+                const SizedBox(height: 8),
+                const Center(child: Text("Use these for instant testing/demo", style: TextStyle(fontSize: 10, color: Colors.grey))),
               ],
 
               const SizedBox(height: 40),

@@ -34,9 +34,35 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
     socketService.socket?.on('connect', (_) {
       socketService.socket?.emit('joinAdminRoom');
     });
-    socketService.socket?.on('admin_location_update', (data) {
-      _updateMarker(data);
+    
+    socketService.socket?.on('admin_location_update', (data) => _updateMarker(data));
+    
+    socketService.socket?.on('new_rider_registered', (data) {
+      if (mounted) {
+        _loadInitialData(); // Refresh lists
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('NEW RIDER REGISTERED: ${data['name']}'),
+            backgroundColor: Colors.blue[800],
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     });
+
+    socketService.socket?.on('new_delivery_request', (data) {
+      if (mounted) {
+        _loadInitialData(); // Refresh lists
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('NEW RIDE REQUESTED!'),
+            backgroundColor: Colors.orange[800],
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    });
+
     // Also listen for new delivery pings to refresh list
     socketService.socket?.on('rider_ping', (_) => _loadInitialData());
   }
@@ -107,19 +133,40 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // If the data is still loading, show a loader
-    if (_isLoadingData) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-
-    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final auth = Provider.of<AuthProvider>(context);
     
     if (auth.userRole != 'ADMIN') {
       return const Scaffold(body: Center(child: Text('Unauthorized access.')));
     }
     
     return Scaffold(
-...
+      appBar: AppBar(
+        title: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Admin Command Center', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            Text('Live Operational View', style: TextStyle(fontSize: 12, color: Colors.grey)),
+          ],
+        ),
+        actions: [
+          Container(
+            margin: const EdgeInsets.only(right: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(color: Colors.red[100], borderRadius: BorderRadius.circular(10)),
+            child: const Text('ADMIN', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 10)),
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout), 
+            onPressed: () {
+              Provider.of<SocketService>(context, listen: false).reset();
+              auth.logout();
+            }
+          ),
+        ],
+      ),
+      body: _isLoadingData 
+        ? const Center(child: CircularProgressIndicator())
+        : Column(
             children: [
               _buildStatsBar(),
               Expanded(
@@ -127,7 +174,13 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
                 child: _buildMap(),
               ),
               Expanded(
-...
+                flex: 2,
+                child: _buildInfoTabs(),
+              ),
+            ],
+          ),
+    );
+  }
 
   Widget _buildStatsBar() {
     return Container(

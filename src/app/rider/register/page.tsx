@@ -28,8 +28,14 @@ export default function RiderRegisterPage() {
     e.preventDefault();
     setError('');
 
+    const nameParts = name.trim().split(/\s+/);
+    if (nameParts.length < 2) {
+      setError('Full Name must include at least two names.');
+      return;
+    }
+
     if (!idCardFile) {
-      setError('Please upload your ID or Passport card.');
+      setError('Please upload your ID or Passport card photo.');
       return;
     }
 

@@ -101,9 +101,14 @@ export async function POST(req: NextRequest) {
     const io = (global as any).io;
 
     if (io) {
+        // Broadcast new delivery request to all riders
+        io.emit('rider_ping', { deliveryId: deliveryRequest.id, delivery: deliveryRequest });
+        
+        // Also notify the admin room specifically
+        io.to('admin_room').emit('new_delivery_request', deliveryRequest);
+
         if (riderId) {
-            // Notify the specific rider and the client
-            io.emit('newDeliveryRequest', deliveryRequest); // Broadast or targeted
+            // If a specific rider was assigned/accepted directly
             io.to(deliveryRequest.id).emit('rideAccepted', {
                 deliveryId: deliveryRequest.id,
                 riderDetails: {
@@ -112,9 +117,6 @@ export async function POST(req: NextRequest) {
                     numberPlate: deliveryRequest.rider?.motorcyclePlateNumber,
                 }
             });
-        } else {
-            // Emit a newDeliveryRequest event to all connected clients (riders)
-            io.emit('newDeliveryRequest', deliveryRequest);
         }
     } 
 

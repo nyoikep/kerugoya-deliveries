@@ -10,6 +10,7 @@ import 'package:kerugoya_deliveries_mobile/screens/login_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:location/location.dart';
 import 'package:intl/intl.dart';
+import 'dart:math' show cos, sqrt, asin;
 
 enum CheckoutStep { pickup, destination, selectRider }
 
@@ -34,6 +35,25 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   
   bool _isScheduled = false;
   DateTime? _scheduledAt;
+
+  // Pricing constants
+  static const double baseFee = 250.0;
+  static const double perKmRate = 50.0;
+
+  double _calculateDistance(LatLng p1, LatLng p2) {
+    var p = 0.017453292519943295;
+    var c = cos;
+    var a = 0.5 - c((p2.latitude - p1.latitude) * p) / 2 +
+        c(p1.latitude * p) * c(p2.latitude * p) *
+            (1 - c((p2.longitude - p1.longitude) * p)) / 2;
+    return 12742 * asin(sqrt(a));
+  }
+
+  double get _estimatedPrice {
+    if (_pickupLocation == null || _destinationLocation == null) return 0.0;
+    double distance = _calculateDistance(_pickupLocation!, _destinationLocation!);
+    return baseFee + (distance * perKmRate);
+  }
 
   @override
   void initState() {
@@ -230,6 +250,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Widget _buildBottomPanel() {
+    final cart = Provider.of<CartProvider>(context);
+    final totalPrice = cart.totalAmount + _estimatedPrice;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -240,6 +263,23 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (_pickupLocation != null && _destinationLocation != null)
+            Container(
+              margin: const EdgeInsets.only(bottom: 15),
+              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.green[50],
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(color: Colors.green[100]!),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Estimated Journey Price:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+                  Text('Ksh ${_estimatedPrice.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.green, fontSize: 18)),
+                ],
+              ),
+            ),
           if (_currentStep == CheckoutStep.selectRider && _isScheduled)
             InkWell(
               onTap: _selectDateTime,
@@ -300,7 +340,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   child: _isSubmitting
                       ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                       : Text(
-                          _currentStep == CheckoutStep.selectRider ? (_isScheduled ? 'SCHEDULE TRIP' : 'BOOK NOW') : 'CONTINUE',
+                          _currentStep == CheckoutStep.selectRider 
+                            ? (_isScheduled ? 'SCHEDULE Ksh ${totalPrice.toStringAsFixed(0)}' : 'BOOK Ksh ${totalPrice.toStringAsFixed(0)}') 
+                            : 'CONTINUE',
                           style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
                         ),
                 ),

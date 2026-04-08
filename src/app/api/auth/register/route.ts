@@ -14,12 +14,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Missing required fields: email, phone, password, name' }, { status: 400 });
     }
 
-    // Additional validation for RIDER role
-    if (role === 'RIDER' && !idNumber) {
-      return NextResponse.json({ message: 'Riders must provide an ID Number' }, { status: 400 });
+    // Enforce 2 names validation
+    const nameParts = name.trim().split(/\s+/);
+    if (nameParts.length < 2) {
+      return NextResponse.json({ message: 'Full Name must include at least two names.' }, { status: 400 });
     }
-    if (role === 'RIDER' && !motorcyclePlateNumber) {
-      return NextResponse.json({ message: 'Riders must provide a Motorcycle Plate Number' }, { status: 400 });
+
+    // Additional validation for RIDER role
+    if (role === 'RIDER') {
+      if (!idNumber) {
+        return NextResponse.json({ message: 'Riders must provide an ID Number' }, { status: 400 });
+      }
+      if (!motorcyclePlateNumber) {
+        return NextResponse.json({ message: 'Riders must provide a Motorcycle Plate Number' }, { status: 400 });
+      }
+      if (!idCardUrl) {
+        return NextResponse.json({ message: 'Riders must provide an ID Photo' }, { status: 400 });
+      }
     }
 
     const existingUser = await prisma.user.findFirst({
@@ -74,6 +85,21 @@ export async function POST(req: NextRequest) {
     );
 
     const { password: _, ...userWithoutPassword } = user;
+
+    // Notify admin via Socket.IO
+    const io = (global as any).io;
+    if (io) {
+      if (user.role === 'RIDER') {
+        io.to('admin_room').emit('new_rider_registered', {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          motorcyclePlateNumber: user.motorcyclePlateNumber,
+          createdAt: user.createdAt
+        });
+      }
+    }
 
     return NextResponse.json({ ...userWithoutPassword, token }, { status: 201 });
   } catch (error: any) {

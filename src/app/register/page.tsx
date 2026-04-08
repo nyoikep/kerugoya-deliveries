@@ -20,6 +20,12 @@ export default function RegisterPage() {
     e.preventDefault();
     setError('');
 
+    const nameParts = name.trim().split(/\s+/);
+    if (nameParts.length < 2) {
+      setError('Full Name must include at least two names (First and Last name).');
+      return;
+    }
+
     const res = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
