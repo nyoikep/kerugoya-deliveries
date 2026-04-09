@@ -284,6 +284,14 @@ export default function RiderDashboardPage() {
           </div>
 
           <div className="flex items-center gap-6">
+             <a 
+               href="/Kerugoya_Deliveries_Mobile_Release.apk" 
+               download 
+               className="hidden lg:flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-full text-xs font-black transition-all hover:bg-gray-200 dark:hover:bg-gray-700"
+             >
+                <Download size={14} />
+                <span>Install App</span>
+             </a>
              <div className="flex items-center gap-2">
                 <span className={`text-xs font-black uppercase tracking-widest ${isOnline ? 'text-green-500' : 'text-gray-400'}`}>
                    {isOnline ? 'Online' : 'Offline'}

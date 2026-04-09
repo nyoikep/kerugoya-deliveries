@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 
+import 'package:kerugoya_deliveries_mobile/models/user.dart';
+
 class AuthProvider extends ChangeNotifier {
   String? _token;
   String? _userRole;
+  User? _user;
 
   String? get token => _token;
   String? get userRole => _userRole;
+  User? get user => _user;
   bool get isAuthenticated => _token != null && !JwtDecoder.isExpired(_token!);
 
   AuthProvider() {

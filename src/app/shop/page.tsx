@@ -16,7 +16,8 @@ import {
   ShoppingCart,
   CheckCircle2,
   AlertCircle,
-  ArrowRight
+  ArrowRight,
+  Award
 } from 'lucide-react';
 import NoSSR from '@/components/NoSSR';
 
@@ -34,6 +35,7 @@ interface Business {
   name: string;
   description?: string;
   category: string;
+  isFeatured: boolean;
   products: Product[];
 }
 
@@ -238,18 +240,36 @@ export default function ShopPage() {
               <section key={business.id} className="scroll-mt-40">
                 <div className="flex items-center justify-between mb-8">
                   <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-white dark:bg-gray-800 rounded-2xl shadow-md flex items-center justify-center text-blue-600">
+                    <div className="w-14 h-14 bg-white dark:bg-gray-800 rounded-2xl shadow-md flex items-center justify-center text-blue-600 relative">
                       {categoryIcons[business.category] || <ShoppingBag />}
+                      {business.isFeatured && (
+                         <div className="absolute -top-2 -right-2 bg-yellow-400 text-white p-1 rounded-full shadow-lg">
+                            <Award className="w-3 h-3" />
+                         </div>
+                      )}
                     </div>
                     <div>
-                      <h2 className="text-2xl font-black text-gray-900 dark:text-gray-100 flex items-center">
-                        {business.name}
-                        {business.category === 'SERVICE' && <CheckCircle2 className="ml-2 h-5 w-5 text-green-500" />}
-                      </h2>
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-2xl font-black text-gray-900 dark:text-gray-100 flex items-center">
+                          {business.name}
+                          {business.category === 'SERVICE' && <CheckCircle2 className="ml-2 h-5 w-5 text-green-500" />}
+                        </h2>
+                        {business.isFeatured && (
+                           <span className="px-2 py-0.5 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 text-[10px] font-black rounded-lg border border-yellow-200 dark:border-yellow-800">
+                             PROMOTED
+                           </span>
+                        )}
+                      </div>
                       <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">{business.description}</p>
                     </div>
                   </div>
-                  <button className="hidden md:flex items-center text-blue-600 font-bold hover:underline">
+                  <button 
+                    onClick={() => {
+                      setSearchQuery(business.name);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="hidden md:flex items-center text-blue-600 font-bold hover:underline"
+                  >
                     Visit Business <ChevronRight className="ml-1 h-4 w-4" />
                   </button>
                 </div>

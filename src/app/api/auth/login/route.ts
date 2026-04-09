@@ -5,9 +5,10 @@ import jwt from 'jsonwebtoken';
 
 export async function POST(req: NextRequest) {
   try {
-    const { email: rawEmail, phone: rawPhone, password } = await req.json();
+    const { email: rawEmail, phone: rawPhone, password: rawPassword } = await req.json();
     const email = rawEmail?.toLowerCase().trim();
     const phone = rawPhone?.replace(/\D/g, '').trim();
+    const password = rawPassword?.trim();
 
     if ((!email && !phone) || !password) {
       return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
@@ -21,9 +22,13 @@ export async function POST(req: NextRequest) {
       console.log(`[LOGIN DEBUG] Attempting login for identifier: ${email || phone}`);
       
       if (email) {
-        // Try email first
-        user = await prisma.user.findUnique({
-          where: { email },
+        // Try email first (case-insensitive search)
+        user = await prisma.user.findFirst({
+          where: {
+            email: {
+              equals: email,
+            },
+          },
         });
 
         // If not found and looks like a phone number, try phone
@@ -53,12 +58,16 @@ export async function POST(req: NextRequest) {
     }
 
     if (!user) {
+      console.log(`[LOGIN DEBUG] User NOT found for identifier: ${email || phone}`);
       return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
     }
 
+    console.log(`[LOGIN DEBUG] User found: ${user.email}, comparing passwords...`);
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
+    console.log(`[LOGIN DEBUG] Password match: ${isPasswordCorrect}`);
 
     if (!isPasswordCorrect) {
+      console.log(`[LOGIN DEBUG] Password mismatch for user: ${user.email}`);
       return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
     }
 

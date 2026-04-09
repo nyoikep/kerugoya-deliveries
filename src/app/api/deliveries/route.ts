@@ -65,11 +65,34 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const { cartItems, clientLocation, destination, riderId, scheduledAt } = await req.json();
+    const { cartItems, clientLocation, destination, riderId, scheduledAt, isExpress, tipAmount } = await req.json();
 
     if (!clientLocation || !destination) {
       return NextResponse.json({ message: 'Missing required fields: clientLocation, destination' }, { status: 400 });
     }
+
+    // Fetch user for Gold status
+    const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
+
+    // Monetization Logic
+    const EXPRESS_FEE = 100;
+    const PLATFORM_FEE_PERCENT = 0.10; // 10%
+    
+    // Surge pricing based on time (5PM - 8PM)
+    const currentHour = new Date().getHours();
+    const isPeakHour = currentHour >= 17 && currentHour <= 20;
+    const surgeMultiplier = isPeakHour ? 1.5 : 1.0;
+
+    // Calculate base price (Simulation - in production use distance matrix)
+    let basePrice = 150; // Base Kerugoya fare
+    if (cartItems && cartItems.length > 0) {
+      // Add weight/volume simulation
+      basePrice += (cartItems.length * 20);
+    }
+
+    const platformFee = user?.isGold ? 0 : (basePrice * PLATFORM_FEE_PERCENT);
+    const expressFee = isExpress ? EXPRESS_FEE : 0;
+    const totalDeliveryPrice = (basePrice * surgeMultiplier) + expressFee + (tipAmount || 0);
 
     const deliveryRequest = await prisma.deliveryRequest.create({
       data: {
@@ -79,6 +102,11 @@ export async function POST(req: NextRequest) {
         riderId: riderId || null,
         scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
         status: riderId ? 'ACCEPTED' : 'PENDING',
+        price: totalDeliveryPrice,
+        platformFee: platformFee,
+        isExpress: !!isExpress,
+        tipAmount: tipAmount || 0,
+        surgeMultiplier: surgeMultiplier,
         cartItems: cartItems && cartItems.length > 0 ? {
           create: cartItems.map((item: { id: string; name: string; price: number; quantity: number }) => ({
             productId: item.id,

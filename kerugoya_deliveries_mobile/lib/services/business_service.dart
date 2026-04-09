@@ -35,6 +35,7 @@ class BusinessService {
         name: 'Lokko Motto',
         description: 'A club that sells wines and spirits',
         category: 'SHOP',
+        isFeatured: true,
         products: [
           Product(id: 'p1', name: 'Johnnie Walker Red Label (750ml)', price: 2500, businessId: 'mock-1', createdAt: DateTime.now(), updatedAt: DateTime.now(), imageUrl: 'https://images.unsplash.com/photo-1592484944180-111ded3df9c8?q=80&w=400'),
           Product(id: 'p2', name: 'Smirnoff Vodka (750ml)', price: 1800, businessId: 'mock-1', createdAt: DateTime.now(), updatedAt: DateTime.now(), imageUrl: 'https://images.unsplash.com/photo-1594224734568-7dfba8d32d04?q=80&w=400'),
@@ -56,6 +57,7 @@ class BusinessService {
         name: 'Boda Boda Services',
         description: 'Fast and reliable transport services',
         category: 'SERVICE',
+        isFeatured: true,
         products: [
           Product(id: 'p6', name: 'Town Trip', price: 150, businessId: 'mock-3', createdAt: DateTime.now(), updatedAt: DateTime.now(), imageUrl: 'https://images.unsplash.com/photo-1558981403-c5f91cbba527?q=80&w=400'),
           Product(id: 'p7', name: 'Parcel Delivery', price: 200, businessId: 'mock-3', createdAt: DateTime.now(), updatedAt: DateTime.now(), imageUrl: 'https://images.unsplash.com/photo-1566576721346-d4a3b4eaad5b?q=80&w=400'),

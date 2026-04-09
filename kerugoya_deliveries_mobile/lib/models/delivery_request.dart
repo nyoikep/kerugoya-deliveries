@@ -7,6 +7,11 @@ class DeliveryRequest {
   final String clientLocation;
   final String destination;
   final String status;
+  final double price;
+  final double platformFee;
+  final bool isExpress;
+  final double tipAmount;
+  final double surgeMultiplier;
   final DateTime createdAt;
   final DateTime updatedAt;
   final String clientId;
@@ -21,6 +26,11 @@ class DeliveryRequest {
     required this.clientLocation,
     required this.destination,
     required this.status,
+    this.price = 0,
+    this.platformFee = 0,
+    this.isExpress = false,
+    this.tipAmount = 0,
+    this.surgeMultiplier = 1.0,
     required this.createdAt,
     required this.updatedAt,
     required this.clientId,
@@ -39,6 +49,11 @@ class DeliveryRequest {
       clientLocation: json['clientLocation'],
       destination: json['destination'],
       status: json['status'],
+      price: (json['price'] as num?)?.toDouble() ?? 0,
+      platformFee: (json['platformFee'] as num?)?.toDouble() ?? 0,
+      isExpress: json['isExpress'] ?? false,
+      tipAmount: (json['tipAmount'] as num?)?.toDouble() ?? 0,
+      surgeMultiplier: (json['surgeMultiplier'] as num?)?.toDouble() ?? 1.0,
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
       clientId: json['clientId'],
@@ -56,6 +71,11 @@ class DeliveryRequest {
       'clientLocation': clientLocation,
       'destination': destination,
       'status': status,
+      'price': price,
+      'platformFee': platformFee,
+      'isExpress': isExpress,
+      'tipAmount': tipAmount,
+      'surgeMultiplier': surgeMultiplier,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
       'clientId': clientId,

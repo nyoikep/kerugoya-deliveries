@@ -102,10 +102,14 @@ export default function NavBar() {
             )}
           </Link>
           
-          <button className="hidden lg:flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-full text-xs font-black transition-all hover:bg-gray-200 dark:hover:bg-gray-700">
+          <a 
+            href="/Kerugoya_Deliveries_Mobile_Release.apk" 
+            download 
+            className="hidden lg:flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-full text-xs font-black transition-all hover:bg-gray-200 dark:hover:bg-gray-700"
+          >
              <Download className="h-3 w-3" />
              <span>Install App</span>
-          </button>
+          </a>
 
           <ThemeSwitcher />
           
@@ -172,6 +176,15 @@ export default function NavBar() {
                 Login
               </Link>
             )}
+
+            <a 
+              href="/Kerugoya_Deliveries_Mobile_Release.apk" 
+              download 
+              className="px-4 py-2 bg-black text-white font-semibold rounded-md hover:bg-gray-800 transition duration-300 w-3/4 text-center flex items-center justify-center gap-2"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <Download className="h-4 w-4" /> Install Mobile App
+            </a>
           </div>
         </div>
       )}

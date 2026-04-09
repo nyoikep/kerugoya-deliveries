@@ -53,12 +53,23 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final businessService = Provider.of<BusinessService>(context, listen: false);
       final fetched = await businessService.getBusinesses();
-      setState(() {
-        _featuredBusinesses = fetched.take(5).toList();
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          // Sort: Featured first, then by name/other criteria
+          final sorted = List<Business>.from(fetched);
+          sorted.sort((a, b) {
+            if (a.isFeatured && !b.isFeatured) return -1;
+            if (!a.isFeatured && b.isFeatured) return 1;
+            return 0;
+          });
+          _featuredBusinesses = sorted.take(6).toList();
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() { _isLoading = false; });
+      if (mounted) {
+        setState(() { _isLoading = false; });
+      }
     }
   }
 
@@ -170,9 +181,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 15),
                 Row(
                   children: [
-                    _buildNowLaterChip(Icons.access_time_filled, 'Now', true),
+                    _buildNowLaterChip(Icons.access_time_filled, 'Now', true, () {
+                      if (_checkAuth()) {
+                        Navigator.of(context).push(MaterialPageRoute(builder: (context) => const CheckoutScreen()));
+                      }
+                    }),
                     const SizedBox(width: 10),
-                    _buildNowLaterChip(Icons.calendar_month, 'Schedule', false),
+                    _buildNowLaterChip(Icons.calendar_month, 'Schedule', false, () {
+                      if (_checkAuth()) {
+                        Navigator.of(context).push(MaterialPageRoute(builder: (context) => const CheckoutScreen()));
+                      }
+                    }),
                   ],
                 ),
               ],
@@ -183,20 +202,23 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildNowLaterChip(IconData icon, String label, bool isActive) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: isActive ? Colors.black : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey[300]!),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 16, color: isActive ? Colors.white : Colors.black),
-          const SizedBox(width: 8),
-          Text(label, style: TextStyle(color: isActive ? Colors.white : Colors.black, fontWeight: FontWeight.bold, fontSize: 13)),
-        ],
+  Widget _buildNowLaterChip(IconData icon, String label, bool isActive, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isActive ? Colors.black : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.grey[300]!),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 16, color: isActive ? Colors.white : Colors.black),
+            const SizedBox(width: 8),
+            Text(label, style: TextStyle(color: isActive ? Colors.white : Colors.black, fontWeight: FontWeight.bold, fontSize: 13)),
+          ],
+        ),
       ),
     );
   }
@@ -316,7 +338,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Material(
                       color: Colors.transparent,
                       child: InkWell(
-                        onTap: () {},
+                        onTap: () {
+                           ScaffoldMessenger.of(context).showSnackBar(
+                             const SnackBar(content: Text('Kerugoya Plus is coming soon to your area!')),
+                           );
+                        },
                         borderRadius: BorderRadius.circular(15),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),

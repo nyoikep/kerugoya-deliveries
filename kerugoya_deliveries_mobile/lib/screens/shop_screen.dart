@@ -299,6 +299,15 @@ class _ShopScreenState extends State<ShopScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(business.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                  const SizedBox(height: 2),
+                  if (business.isFeatured)
+                    Row(
+                      children: [
+                        Icon(Icons.stars, color: Colors.yellow[700], size: 14),
+                        const SizedBox(width: 4),
+                        Text('PROMOTED', style: TextStyle(color: Colors.yellow[900], fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+                      ],
+                    ),
                   const SizedBox(height: 4),
                   Row(
                     children: [

@@ -35,10 +35,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   
   bool _isScheduled = false;
   DateTime? _scheduledAt;
+  bool _isExpress = false;
+  double _tipAmount = 0;
 
-  // Pricing constants
-  static const double baseFee = 250.0;
-  static const double perKmRate = 50.0;
+  // Pricing constants (Mirroring Backend)
+  static const double baseFare = 150.0;
+  static const double expressFee = 100.0;
+  static const double platformFeePercent = 0.10;
 
   double _calculateDistance(LatLng p1, LatLng p2) {
     var p = 0.017453292519943295;
@@ -49,10 +52,24 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     return 12742 * asin(sqrt(a));
   }
 
-  double get _estimatedPrice {
+  double get _surgeMultiplier {
+    final hour = DateTime.now().hour;
+    return (hour >= 17 && hour <= 20) ? 1.5 : 1.0;
+  }
+
+  double get _calculatedPrice {
     if (_pickupLocation == null || _destinationLocation == null) return 0.0;
-    double distance = _calculateDistance(_pickupLocation!, _destinationLocation!);
-    return baseFee + (distance * perKmRate);
+    
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final cart = Provider.of<CartProvider>(context, listen: false);
+    final user = authProvider.user;
+    
+    double tripBase = baseFare + (cart.items.length * 20.0);
+    double surgePrice = tripBase * _surgeMultiplier;
+    double platformFee = (user?.isGold ?? false) ? 0 : (tripBase * platformFeePercent);
+    double expressPrice = _isExpress ? expressFee : 0;
+    
+    return surgePrice + platformFee + expressPrice + _tipAmount;
   }
 
   @override
@@ -174,6 +191,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         riderId: _selectedRiderId,
         socketService: socketService,
         scheduledAt: _isScheduled ? _scheduledAt?.toIso8601String() : null,
+        isExpress: _isExpress,
+        tipAmount: _tipAmount,
       );
 
       if (mounted) {
@@ -251,7 +270,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   Widget _buildBottomPanel() {
     final cart = Provider.of<CartProvider>(context);
-    final totalPrice = cart.totalAmount + _estimatedPrice;
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final user = authProvider.user;
+    final totalPrice = cart.totalAmount + _calculatedPrice;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -264,21 +285,108 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (_pickupLocation != null && _destinationLocation != null)
-            Container(
-              margin: const EdgeInsets.only(bottom: 15),
-              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-              decoration: BoxDecoration(
-                color: Colors.green[50],
-                borderRadius: BorderRadius.circular(15),
-                border: Border.all(color: Colors.green[100]!),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Estimated Journey Price:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
-                  Text('Ksh ${_estimatedPrice.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.green, fontSize: 18)),
-                ],
-              ),
+            Column(
+              children: [
+                // Monetization Options Row
+                if (_currentStep == CheckoutStep.selectRider)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 15),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: InkWell(
+                          onTap: () => setState(() => _isExpress = !_isExpress),
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: _isExpress ? Colors.blue[50] : Colors.grey[50],
+                              borderRadius: BorderRadius.circular(15),
+                              border: Border.all(color: _isExpress ? Colors.blue[200]! : Colors.grey[200]!),
+                            ),
+                            child: Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.bolt, size: 16, color: _isExpress ? Colors.blue[700] : Colors.grey[600]),
+                                    const SizedBox(width: 4),
+                                    Text('Express', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: _isExpress ? Colors.blue[700] : Colors.grey[600])),
+                                  ],
+                                ),
+                                const Text('+ Ksh 100', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 10)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.green[50],
+                            borderRadius: BorderRadius.circular(15),
+                            border: Border.all(color: Colors.green[100]!),
+                          ),
+                          child: Column(
+                            children: [
+                              const Text('Tip Rider', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.green)),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                children: [20, 50, 100].map((amt) => InkWell(
+                                  onTap: () => setState(() => _tipAmount = _tipAmount == amt.toDouble() ? 0 : amt.toDouble()),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: _tipAmount == amt.toDouble() ? Colors.green : Colors.white,
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text('K$amt', style: TextStyle(color: _tipAmount == amt.toDouble() ? Colors.white : Colors.green, fontSize: 10, fontWeight: FontWeight.w900)),
+                                  ),
+                                )).toList(),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                Container(
+                  margin: const EdgeInsets.only(bottom: 15),
+                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.black87,
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Base + Surge', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                          Text('Ksh ${(baseFare + cart.items.length * 20.0) * _surgeMultiplier}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            (user?.isGold ?? false) ? 'Platform Fee (GOLD)' : 'Platform Fee', 
+                            style: TextStyle(color: (user?.isGold ?? false) ? Colors.yellow : Colors.white70, fontSize: 12)
+                          ),
+                          Text(
+                            (user?.isGold ?? false) ? 'FREE' : 'Ksh ${(baseFare + cart.items.length * 20.0) * platformFeePercent}', 
+                            style: TextStyle(color: (user?.isGold ?? false) ? Colors.yellow : Colors.white, fontWeight: FontWeight.bold)
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           if (_currentStep == CheckoutStep.selectRider && _isScheduled)
             InkWell(

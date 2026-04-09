@@ -5,9 +5,10 @@ import jwt from 'jsonwebtoken';
 
 export async function POST(req: NextRequest) {
   try {
-    const { email: rawEmail, phone: rawPhone, password, name, role, idNumber, motorcyclePlateNumber, idCardUrl } = await req.json();
+    const { email: rawEmail, phone: rawPhone, password: rawPassword, name, role, idNumber, motorcyclePlateNumber, idCardUrl } = await req.json();
     const email = rawEmail?.toLowerCase().trim();
     const phone = rawPhone?.replace(/\D/g, '').trim();
+    const password = rawPassword?.trim();
 
     // Basic validation for all users
     if (!email || !phone || !password || !name) {
@@ -60,6 +61,7 @@ export async function POST(req: NextRequest) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    console.log(`[REGISTER DEBUG] Creating user: ${email}, phone: ${phone}, role: ${role || 'CLIENT'}`);
 
     const user = await prisma.user.create({
       data: {
@@ -74,6 +76,7 @@ export async function POST(req: NextRequest) {
         motorcyclePlateNumber: role === 'RIDER' ? motorcyclePlateNumber : null,
       },
     });
+    console.log(`[REGISTER DEBUG] User created successfully: ${user.id}`);
 
     // Generate JWT Token
     const jwtSecret = process.env.JWT_SECRET || 'kerugoya_fallback_secret_2026';

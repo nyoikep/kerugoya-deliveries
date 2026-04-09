@@ -132,18 +132,26 @@ export default function DashboardPage() {
                        Get the best experience by using our mobile app. Live tracking, instant notifications, and faster payments.
                     </p>
                     <div className="space-y-4">
-                       <div className="p-4 bg-white/5 rounded-2xl border border-white/10 flex items-center space-x-4">
+                       <a 
+                         href="/Kerugoya_Deliveries_Mobile_Release.apk" 
+                         download 
+                         className="p-4 bg-white/5 rounded-2xl border border-white/10 flex items-center space-x-4 hover:bg-white/10 transition-all cursor-pointer"
+                       >
                           <div className="h-12 w-12 bg-white rounded-xl flex items-center justify-center text-black">
-                             <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path d="M17.523 15.3414c-.5511 0-.9993.4482-.9993.9993v1.9985c0 .5511.4482.9993.9993.9993h1.9985c.5511 0 .9993-.4482.9993-.9993v-1.9985c0-.5511-.4482-.9993-.9993-.9993h-1.9985zM12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"/></svg>
+                             <Download className="h-6 w-6" />
                           </div>
                           <div>
                              <p className="font-bold text-sm">Download for Android</p>
                              <p className="text-[10px] text-gray-500 uppercase font-black">v4.2 stable</p>
                           </div>
-                       </div>
-                       <button className="w-full py-4 bg-white text-black font-black rounded-2xl hover:bg-gray-200 transition-all">
+                       </a>
+                       <a 
+                         href="/Kerugoya_Deliveries_Mobile_Release.apk" 
+                         download 
+                         className="block w-full py-4 bg-white text-black font-black rounded-2xl hover:bg-gray-200 transition-all text-center"
+                       >
                           Get the App
-                       </button>
+                       </a>
                     </div>
                  </div>
               </div>

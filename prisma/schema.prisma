@@ -19,6 +19,7 @@ model User {
   role                  String             @default("CLIENT")
   status                String             @default("APPROVED")
   loyaltyPoints         Int                @default(0)
+  isGold                Boolean            @default(false)
   fcmToken              String?
   resetToken            String?
   resetTokenExpiry      DateTime?
@@ -40,6 +41,11 @@ model DeliveryRequest {
   clientLocation   String
   destination      String
   status           String            @default("PENDING")
+  price            Float             @default(0)
+  platformFee      Float             @default(0)
+  isExpress        Boolean           @default(false)
+  tipAmount        Float             @default(0)
+  surgeMultiplier  Float             @default(1.0)
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   clientId         String
@@ -60,10 +66,10 @@ model Product {
   name        String     @unique
   description String?
   price       Float
-  imageUrl    String?
   businessId  String
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
+  imageUrl    String?
   cartItems   CartItem[]
   business    Business   @relation(fields: [businessId], references: [id])
 
@@ -84,6 +90,7 @@ model Business {
   name        String    @unique
   description String?
   category    String    @default("SHOP")
+  isFeatured  Boolean   @default(false)
   ownerId     String
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt

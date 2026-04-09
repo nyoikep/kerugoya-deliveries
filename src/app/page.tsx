@@ -114,29 +114,29 @@ export default function HomePage() {
       <section className="py-24 px-6 max-w-6xl mx-auto">
         <h2 className="text-3xl font-black mb-12">Ride with confidence</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="group cursor-pointer">
+          <Link href="/new-delivery" className="group cursor-pointer">
             <div className="h-64 bg-gray-100 dark:bg-gray-800 rounded-3xl mb-6 overflow-hidden relative">
                <Image src="/pexels-mcgzay-30661393.jpg" alt="Ride" fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
             </div>
             <h3 className="text-2xl font-black mb-2 flex items-center">Ride <ChevronRight className="ml-1 h-5 w-5" /></h3>
             <p className="text-gray-600 dark:text-gray-400">Request a ride now or for later, and travel across Kerugoya with ease.</p>
-          </div>
+          </Link>
           
-          <div className="group cursor-pointer">
+          <Link href="/new-delivery?type=package" className="group cursor-pointer">
             <div className="h-64 bg-gray-100 dark:bg-gray-800 rounded-3xl mb-6 overflow-hidden relative">
                <Image src="/pexels-odonti-photography-661992921-27999926.jpg" alt="Delivery" fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
             </div>
             <h3 className="text-2xl font-black mb-2 flex items-center">Package <ChevronRight className="ml-1 h-5 w-5" /></h3>
             <p className="text-gray-600 dark:text-gray-400">Send packages to friends and family across the city in minutes.</p>
-          </div>
+          </Link>
 
-          <div className="group cursor-pointer">
+          <Link href="/shop" className="group cursor-pointer">
             <div className="h-64 bg-gray-100 dark:bg-gray-800 rounded-3xl mb-6 overflow-hidden relative">
                <Image src="/pexels-clayton-943956-11206901.jpg" alt="Shop" fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
             </div>
             <h3 className="text-2xl font-black mb-2 flex items-center">Shop <ChevronRight className="ml-1 h-5 w-5" /></h3>
             <p className="text-gray-600 dark:text-gray-400">Order from your favorite local stores and have it delivered to your doorstep.</p>
-          </div>
+          </Link>
         </div>
       </section>
 
@@ -149,10 +149,14 @@ export default function HomePage() {
               Download the Kerugoya-deliveries app for a complete experience. Live tracking, easy payments, and exclusive rewards.
             </p>
             <div className="flex flex-wrap gap-4">
-              <button className="px-8 py-4 bg-black text-white rounded-xl font-bold flex items-center space-x-2 hover:bg-gray-800 transition-all">
+              <a 
+                href="/Kerugoya_Deliveries_Mobile_Release.apk" 
+                download 
+                className="px-8 py-4 bg-black text-white rounded-xl font-bold flex items-center space-x-2 hover:bg-gray-800 transition-all"
+              >
                 <Download className="h-6 w-6" />
                 <span>Download Now</span>
-              </button>
+              </a>
               <div className="flex items-center space-x-2 px-6 py-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl font-bold">
                  <Smartphone className="h-6 w-6" />
                  <span>Scan to download</span>

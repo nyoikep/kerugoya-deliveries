@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useCart } from '@/hooks/useCart';
-import { ShoppingCart, MapPin, CreditCard, Bike, Clock, Navigation, ShoppingBag } from 'lucide-react'; // Assuming lucide-react is installed
+import { ShoppingCart, MapPin, CreditCard, Bike, Clock, Navigation, ShoppingBag, Award, CheckCircle2 } from 'lucide-react'; // Assuming lucide-react is installed
 
 import NoSSR from '@/components/NoSSR'; // Import NoSSR component
 
@@ -27,6 +27,9 @@ function NewDeliveryContent() {
   const [selectedRiderId, setSelectedRiderId] = useState<string | null>(null);
   const [scheduledAt, setScheduledAt] = useState<string | null>(null);
   const [isScheduled, setIsScheduled] = useState(false);
+  const [isExpress, setIsExpress] = useState(false);
+  const [tipAmount, setTipAmount] = useState(0);
+  const [user, setUser] = useState<any>(null);
   const [estimatedDistance, setEstimatedDistance] = useState<number | null>(null);
   const [estimatedPrice, setEstimatedPrice] = useState<number | null>(null);
   const [error, setError] = useState('');
@@ -39,14 +42,27 @@ function NewDeliveryContent() {
   const initialDestination = searchParams.get('destination');
 
   useEffect(() => {
+    const fetchUser = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        const res = await fetch('/api/user', { headers: { 'Authorization': `Bearer ${token}` } });
+        if (res.ok) setUser(await res.json());
+      }
+    };
+    fetchUser();
+    
     if (searchParams.get('scheduled') === 'true') {
       setIsScheduled(true);
     }
   }, [searchParams]);
 
-  // Pricing constants
-  const BASE_FEE = 2.0;
-  const PER_KM_RATE = 0.5;
+  // Pricing constants (Mirroring Backend)
+  const PLATFORM_FEE_PERCENT = 0.10;
+  const EXPRESS_FEE = 100;
+  
+  const currentHour = new Date().getHours();
+  const isPeakHour = currentHour >= 17 && currentHour <= 20;
+  const surgeMultiplier = isPeakHour ? 1.5 : 1.0;
 
   // Calculate distance and price
   useEffect(() => {
@@ -57,10 +73,15 @@ function NewDeliveryContent() {
       const distanceInKm = distanceInMeters / 1000;
       
       setEstimatedDistance(distanceInKm);
-      const tripPrice = BASE_FEE + (distanceInKm * PER_KM_RATE);
-      setEstimatedPrice(tripPrice);
+      
+      const baseFare = 150 + (cartItems.length * 20);
+      const surgePrice = baseFare * surgeMultiplier;
+      const platformFee = user?.isGold ? 0 : (baseFare * PLATFORM_FEE_PERCENT);
+      const expressFee = isExpress ? EXPRESS_FEE : 0;
+      
+      setEstimatedPrice(surgePrice + platformFee + expressFee + Number(tipAmount));
     }
-  }, [pickupLocation, destinationLocation]);
+  }, [pickupLocation, destinationLocation, isExpress, tipAmount, user, cartItems, surgeMultiplier]);
 
   // Simulated driver data - place around Kerugoya
   const simulatedDrivers = useMemo(() => ([
@@ -125,6 +146,8 @@ function NewDeliveryContent() {
         destination: destinationLocation,
         riderId: selectedRiderId,
         scheduledAt: isScheduled ? scheduledAt : null,
+        isExpress,
+        tipAmount,
       }),
     });
 
@@ -180,9 +203,16 @@ function NewDeliveryContent() {
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-12 flex items-center justify-center font-sans">
       <div className="w-full max-w-5xl mx-auto bg-white dark:bg-gray-800 p-8 rounded-[2rem] shadow-2xl border dark:border-gray-700">
         <div className="flex justify-between items-center mb-10">
-           <h2 className="text-4xl font-black text-gray-900 dark:text-gray-100">
-             {getStepTitle()}
-           </h2>
+           <div className="flex items-center gap-4">
+              <h2 className="text-4xl font-black text-gray-900 dark:text-gray-100">
+                {getStepTitle()}
+              </h2>
+              {user?.isGold && (
+                <span className="px-3 py-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-[10px] font-black rounded-full shadow-lg flex items-center gap-1 animate-pulse">
+                   <Award className="h-3 w-3" /> GOLD MEMBER
+                </span>
+              )}
+           </div>
            <div className="flex items-center space-x-2 bg-gray-100 dark:bg-gray-700 p-1 rounded-xl">
               <button 
                 type="button"
@@ -265,6 +295,47 @@ function NewDeliveryContent() {
                       />
                     </div>
                   )}
+
+                  {/* Monetization Options */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                     <div 
+                       onClick={() => setIsExpress(!isExpress)}
+                       className={`p-6 rounded-2xl border-2 cursor-pointer transition-all ${isExpress ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20 shadow-md' : 'border-gray-100 dark:border-gray-800'}`}
+                     >
+                        <div className="flex justify-between items-center mb-2">
+                           <h4 className="font-black text-gray-900 dark:text-white">Express Delivery</h4>
+                           <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isExpress ? 'border-blue-600 bg-blue-600' : 'border-gray-300'}`}>
+                              {isExpress && <CheckCircle2 className="h-3 w-3 text-white" />}
+                           </div>
+                        </div>
+                        <p className="text-xs text-gray-500 font-bold mb-3">Jump the queue. Get matched with a rider instantly.</p>
+                        <p className="font-black text-blue-600">+ Ksh 100</p>
+                     </div>
+
+                     <div className="p-6 rounded-2xl border-2 border-gray-100 dark:border-gray-800">
+                        <h4 className="font-black text-gray-900 dark:text-white mb-2">Tip Your Rider</h4>
+                        <p className="text-xs text-gray-500 font-bold mb-3">100% of tips go to your rider. Thank them for great service!</p>
+                        <div className="flex items-center gap-2">
+                           {[20, 50, 100].map(amt => (
+                             <button 
+                               key={amt}
+                               type="button"
+                               onClick={() => setTipAmount(amt === tipAmount ? 0 : amt)}
+                               className={`px-3 py-1 rounded-lg text-xs font-black transition-all ${tipAmount === amt ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'}`}
+                             >
+                                Ksh {amt}
+                             </button>
+                           ))}
+                           <input 
+                             type="number" 
+                             placeholder="Other"
+                             className="w-full px-3 py-1 bg-transparent border-b-2 border-gray-200 dark:border-gray-700 outline-none text-sm font-bold"
+                             value={tipAmount || ''}
+                             onChange={(e) => setTipAmount(Number(e.target.value))}
+                           />
+                        </div>
+                     </div>
+                  </div>
 
                   <label className="block text-xl font-black text-gray-900 dark:text-gray-100 mb-6 flex items-center">
                     <Bike className="h-6 w-6 mr-2 text-blue-500" /> Choose your ride
@@ -370,14 +441,35 @@ function NewDeliveryContent() {
 
                 <div className="pt-6 border-t border-white/10">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-gray-400 text-sm">Cart Total</span>
+                    <span className="text-gray-400 text-sm">Base + Surge</span>
+                    <span className="font-bold">Ksh {(150 + cartItems.length * 20) * surgeMultiplier}</span>
+                  </div>
+                  {isPeakHour && (
+                    <div className="flex justify-between items-center mb-2">
+                       <span className="text-orange-400 text-[10px] font-black uppercase">Peak Hour Pricing (1.5x)</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-gray-400 text-sm">Platform Fee</span>
+                    <span className={`font-bold ${user?.isGold ? 'text-green-400' : ''}`}>{user?.isGold ? 'FREE' : `Ksh ${(150 + cartItems.length * 20) * PLATFORM_FEE_PERCENT}`}</span>
+                  </div>
+                  {isExpress && (
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-blue-400 text-sm font-bold flex items-center"><CheckCircle2 className="h-3 w-3 mr-1" /> Express Fee</span>
+                      <span className="font-bold">Ksh {EXPRESS_FEE}</span>
+                    </div>
+                  )}
+                  {tipAmount > 0 && (
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-green-400 text-sm font-bold">Rider Tip</span>
+                      <span className="font-bold">Ksh {tipAmount}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center mb-2 pt-2 border-t border-white/5">
+                    <span className="text-gray-400 text-sm">Cart Items</span>
                     <span className="font-bold">Ksh {getTotalPrice().toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between items-center mb-4">
-                    <span className="text-gray-400 text-sm">Ride Fare</span>
-                    <span className="font-bold">Ksh {(estimatedPrice || 0).toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between items-end">
+                  <div className="flex justify-between items-end mt-4">
                     <span className="text-white font-black text-lg">Total</span>
                     <span className="text-3xl font-black text-blue-400">Ksh {(getTotalPrice() + (estimatedPrice || 0)).toLocaleString()}</span>
                   </div>

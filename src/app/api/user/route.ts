@@ -26,6 +26,7 @@ export async function GET(req: NextRequest) {
         name: true,
         role: true,
         loyaltyPoints: true,
+        isGold: true,
       },
     });
 

@@ -9,6 +9,10 @@ export async function GET(req: NextRequest) {
       include: {
         products: true,
       },
+      orderBy: [
+        { isFeatured: 'desc' },
+        { createdAt: 'desc' },
+      ],
     });
     console.log(`[API DEBUG] Found ${businesses.length} businesses`);
     return NextResponse.json(businesses, { status: 200 });
