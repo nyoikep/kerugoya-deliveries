@@ -6,7 +6,7 @@ import 'package:kerugoya_deliveries_mobile/services/business_service.dart';
 import 'package:kerugoya_deliveries_mobile/screens/login_screen.dart';
 import 'package:kerugoya_deliveries_mobile/screens/checkout_screen.dart';
 import 'package:kerugoya_deliveries_mobile/services/socket_service.dart';
-import 'package:video_player/video_player.dart';
+// Removed VideoPlayer import to reduce APK size
 
 class HomeScreen extends StatefulWidget {
   final String userRole;
@@ -19,34 +19,13 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late VideoPlayerController _videoController;
-  bool _isVideoInitialized = false;
   List<Business> _featuredBusinesses = [];
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _initVideo();
     _fetchFeatured();
-  }
-
-  void _initVideo() {
-    try {
-      _videoController = VideoPlayerController.asset('assets/5614377-hd_1920_1080_25fps.mp4')
-        ..initialize().then((_) {
-          if (mounted) {
-            setState(() { _isVideoInitialized = true; });
-            _videoController.setLooping(true);
-            _videoController.setVolume(0);
-            _videoController.play();
-          }
-        }).catchError((e) {
-          debugPrint('Video initialization error: $e');
-        });
-    } catch (e) {
-      debugPrint('Video controller creation error: $e');
-    }
   }
 
   Future<void> _fetchFeatured() async {
@@ -55,7 +34,6 @@ class _HomeScreenState extends State<HomeScreen> {
       final fetched = await businessService.getBusinesses();
       if (mounted) {
         setState(() {
-          // Sort: Featured first, then by name/other criteria
           final sorted = List<Business>.from(fetched);
           sorted.sort((a, b) {
             if (a.isFeatured && !b.isFeatured) return -1;
@@ -75,7 +53,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
-    _videoController.dispose();
     super.dispose();
   }
 
@@ -113,12 +90,7 @@ class _HomeScreenState extends State<HomeScreen> {
         Container(
           height: 300,
           width: double.infinity,
-          child: _isVideoInitialized
-              ? AspectRatio(
-                  aspectRatio: _videoController.value.aspectRatio,
-                  child: VideoPlayer(_videoController),
-                )
-              : Image.asset('assets/pexels-bruce-byereta-422939715-31961615.jpg', fit: BoxFit.cover),
+          child: Image.asset('assets/pexels-bruce-byereta-422939715-31961615.jpg', fit: BoxFit.cover),
         ),
         Container(
           height: 300,
